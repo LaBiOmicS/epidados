@@ -1,0 +1,58 @@
+/*-- scss:defaults --*/
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
+
+$ed-papel: #111917;
+$ed-superficie: #172220;
+$ed-tinta: #e4ebe8;
+$ed-mutado: #9aaba7;
+$ed-borda: #2a3835;
+$ed-primaria: #5cc4b8;
+$ed-primaria-suave: #18302d;
+$ed-acento: #f08a6c;
+$ed-acento-suave: #3a2219;
+$ed-alerta: #e8b14f;
+
+$body-bg: $ed-papel;
+$body-color: $ed-tinta;
+$primary: $ed-primaria;
+$secondary: $ed-mutado;
+$warning: $ed-alerta;
+$danger: $ed-acento;
+$link-color: $ed-primaria;
+$font-family-sans-serif: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+$font-family-monospace: "JetBrains Mono", ui-monospace, monospace;
+$headings-font-family: "Fraunces", Georgia, serif;
+$headings-font-weight: 650;
+$font-size-root: 17px;
+$line-height-base: 1.65;
+$border-color: $ed-borda;
+$border-radius: .6rem;
+$navbar-bg: $ed-papel;
+$navbar-fg: $ed-tinta;
+$navbar-hl: $ed-primaria;
+$footer-bg: #0c1312;
+$footer-fg: $ed-mutado;
+$code-color: #f3a487;
+$table-border-color: $ed-borda;
+
+/*-- scss:rules --*/
+:root {
+  --ed-papel: #{$ed-papel};
+  --ed-superficie: #{$ed-superficie};
+  --ed-tinta: #{$ed-tinta};
+  --ed-mutado: #{$ed-mutado};
+  --ed-borda: #{$ed-borda};
+  --ed-primaria: #{$ed-primaria};
+  --ed-primaria-suave: #{$ed-primaria-suave};
+  --ed-acento: #{$ed-acento};
+  --ed-acento-suave: #{$ed-acento-suave};
+  --ed-alerta: #{$ed-alerta};
+  --ed-sombra: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .25);
+  --ed-grade: rgba(92, 196, 184, .04);
+  --lente-vet: #6cc48f;
+  --lente-med: #7fb0ee;
+  --lente-enf: #c99ad8;
+  --lente-far: #eda06b;
+  --lente-odo: #6fcbd8;
+}
+.btn-primary, .btn-primary:hover, .btn-primary:focus { color: #0b1514 !important; }

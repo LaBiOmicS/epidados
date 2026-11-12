@@ -1,24 +1,56 @@
 ---
-title: "EpiDados"
-subtitle: "Dados reais do SUS para ensinar saúde, epidemiologia e ciência de dados"
+pagetitle: "EpiDados · Dados reais do SUS para ensinar"
+description: "Dados reais do DATASUS para ensinar saúde, epidemiologia e ciência de dados"
 toc: false
+execute:
+  echo: false
 ---
 
-Este site transforma dados públicos do **DATASUS** em material de aula. Os dados são reais, vêm do Sistema de Informação de Agravos de Notificação (SINAN), são atualizados todo mês e acompanham as armadilhas que quem trabalha com dados de saúde precisa aprender a reconhecer.
+::: {.hero}
+[Material didático aberto · DATASUS + IBGE]{.sobretitulo}
+
+# Dados reais do SUS para *ensinar* saúde e ciência de dados {.hero-titulo .unnumbered .unlisted}
+
+[Este site transforma dados públicos do **DATASUS** em material de aula. Os dados vêm do Sistema de Informação de Agravos de Notificação (SINAN), são atualizados todo mês e acompanham as armadilhas que quem trabalha com dados de saúde precisa aprender a reconhecer.]{.hero-lead}
+
+::: {.acoes}
+[[]{.bi .bi-map} Estudos de caso](casos/zoonoses.qmd){.btn .btn-primary .btn-lg}
+[[]{.bi .bi-cpu} Dados para IA](dados-ia/index.qmd){.btn .btn-outline-primary .btn-lg}
+:::
+
+```{ojs}
+meta = FileAttachment("dados/metadados.json").json()
+registros = Object.values(meta.agravos).flatMap(a => a.anos).reduce((s, a) => s + a.registros, 0)
+anos = Object.values(meta.agravos).flatMap(a => a.anos.map(d => d.ano))
+atualizado = new Date(meta.gerado_em).toLocaleDateString("pt-BR", {month: "long", year: "numeric"})
+html`<div class="numeros">
+  <div><div class="valor">${(registros / 1e6).toLocaleString("pt-BR", {maximumFractionDigits: 1})} mi</div><div class="rotulo">notificações do SINAN processadas</div></div>
+  <div><div class="valor">${Math.min(...anos)}–${Math.max(...anos)}</div><div class="rotulo">anos de série histórica</div></div>
+  <div><div class="valor">${Object.keys(meta.agravos).length}</div><div class="rotulo">agravos de notificação</div></div>
+  <div><div class="valor" style="font-size:1.35rem;line-height:1.48">${atualizado}</div><div class="rotulo">última atualização dos dados</div></div>
+</div>`
+```
+:::
 
 ## Duas portas de entrada
 
-::: {.cartoes}
-::: {.cartao}
+::: {.portas}
+::: {.porta}
+[]{.icone .bi .bi-people}
+
 ### Estudos de caso
-Problemas reais de saúde vistos por várias profissões: **veterinária, medicina, farmácia, enfermagem e odontologia**. Cada caso traz mapa, séries históricas, perguntas por profissão e um quadro com os limites do dado.
+
+Problemas reais de saúde vistos por várias profissões: veterinária, medicina, farmácia, enfermagem e odontologia. Cada caso traz mapa, séries históricas, perguntas por profissão e um quadro com os limites do dado.
 
 [Zoonoses e Saúde Única →](casos/zoonoses.qmd)
 :::
 
-::: {.cartao}
+::: {.porta .acento}
+[]{.icone .bi .bi-diagram-3}
+
 ### Dados para IA
-Datasets prontos para **scikit-learn**, com ficha técnica, notebook de linha de base e problemas reais preservados: desbalanceamento, valores ignorados e vazamento de dados.
+
+Datasets prontos para scikit-learn, com ficha técnica, notebook de linha de base e problemas reais preservados: desbalanceamento, valores ignorados e vazamento de dados.
 
 [Ver datasets →](dados-ia/index.qmd)
 :::
@@ -26,9 +58,25 @@ Datasets prontos para **scikit-learn**, com ficha técnica, notebook de linha de
 
 ## Como usar em aula
 
-1. **Antes da aula:** o professor escolhe um estudo de caso e a lente da sua profissão.
-2. **Em aula:** os alunos exploram o mapa e os gráficos e respondem às perguntas.
-3. **Aprofundamento:** os dados estão disponíveis para download em CSV, para análise no Excel, no R ou no Python.
+::: {.passos}
+::: {.passo}
+**Antes da aula**
+
+O professor escolhe um estudo de caso e a lente da sua profissão.
+:::
+
+::: {.passo}
+**Em aula**
+
+Os alunos exploram o mapa e os gráficos e respondem às perguntas.
+:::
+
+::: {.passo}
+**Aprofundamento**
+
+Os dados estão disponíveis em CSV, para análise no Excel, no R ou no Python.
+:::
+:::
 
 Os roteiros com respostas comentadas ficam numa área separada para professores.
 
@@ -36,10 +84,22 @@ Os roteiros com respostas comentadas ficam numa área separada para professores.
 
 Esta é a primeira versão. Já estão disponíveis:
 
-- **Estudo de caso:** Zoonoses e Saúde Única (leishmaniose visceral, leptospirose e atendimento antirrábico)
-- **Dataset de IA:** óbito por leishmaniose visceral
+::: {.etiquetas}
+[Zoonoses e Saúde Única]{.etiqueta .pronto}
+[Dataset: óbito por leishmaniose visceral]{.etiqueta .pronto}
+:::
 
-Em preparação: sífilis congênita, intoxicações exógenas, acidentes com material biológico, violência, distribuição dos profissionais de saúde e os datasets de baixo peso ao nascer e de dengue.
+Em preparação:
+
+::: {.etiquetas}
+[Sífilis congênita]{.etiqueta .breve}
+[Intoxicações exógenas]{.etiqueta .breve}
+[Acidentes com material biológico]{.etiqueta .breve}
+[Violência]{.etiqueta .breve}
+[Profissionais de saúde]{.etiqueta .breve}
+[Dataset: baixo peso ao nascer]{.etiqueta .breve}
+[Dataset: dengue]{.etiqueta .breve}
+:::
 
 ::: {.callout-warning}
 ## Uso responsável

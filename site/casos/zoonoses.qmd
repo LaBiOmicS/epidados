@@ -5,10 +5,24 @@ execute:
   echo: false
 ---
 
-::: {.callout-note appearance="simple"}
-**Cursos:** Medicina Veterinária · Medicina · Enfermagem · Farmácia\
-**Conceitos:** incidência, letalidade, sazonalidade, distribuição espacial, Saúde Única, limites dos dados de notificação\
-**Tempo sugerido:** 2 aulas de 50 minutos
+::: {.ficha}
+::: {}
+Cursos
+
+Medicina Veterinária · Medicina · Enfermagem · Farmácia
+:::
+
+::: {}
+Conceitos
+
+Incidência, letalidade, sazonalidade, distribuição espacial, Saúde Única, limites dos dados de notificação
+:::
+
+::: {}
+Tempo sugerido
+
+2 aulas de 50 minutos
+:::
 :::
 
 Cerca de 60% dos patógenos que causam doenças em humanos são compartilhados com animais. Este caso usa três sistemas de notificação do SUS para olhar a interface entre pessoas, animais e ambiente:
@@ -40,6 +54,7 @@ meta = FileAttachment("../dados/metadados.json").json()
 eixo = d => d.toLocaleString("pt-BR")
 eixoMil = d => d === 0 ? "0" : (d / 1000).toLocaleString("pt-BR") + " mil"
 fmt = (v, casas = 0) => v == null || isNaN(v) ? "–" : v.toLocaleString("pt-BR", {minimumFractionDigits: casas, maximumFractionDigits: casas})
+cor = ({primaria: "#1a8a82", clara: "#9fd3cd", acento: "#d0583f"})
 nomeAgravo = ({LEIV: "Leishmaniose visceral", LEPT: "Leptospirose"})
 ufs = [...new Set(popUf.map(d => d.uf))].sort()
 
@@ -104,7 +119,7 @@ Plot.plot({
   y: {label: "Casos confirmados", grid: true, tickFormat: eixo},
   x: {label: null, tickFormat: d => String(d)},
   marks: [
-    Plot.barY(lvBr, {x: "ano", y: "casos", fill: d => d.situacao === "final" ? "steelblue" : "lightsteelblue", tip: true}),
+    Plot.barY(lvBr, {x: "ano", y: "casos", fill: d => d.situacao === "final" ? cor.primaria : cor.clara, tip: true}),
     Plot.ruleY([0])
   ]
 })
@@ -116,7 +131,7 @@ Plot.plot({
   y: {label: "Letalidade (%)", grid: true, domain: [0, d3.max(lvBr, d => d.letalidade) * 1.15], tickFormat: eixo},
   x: {label: null, tickFormat: d => String(d)},
   marks: [
-    Plot.lineY(lvBr, {x: "ano", y: "letalidade", stroke: "firebrick", marker: "circle", tip: true}),
+    Plot.lineY(lvBr, {x: "ano", y: "letalidade", stroke: cor.acento, marker: "circle", tip: true}),
     Plot.ruleY([0])
   ]
 })
@@ -213,8 +228,8 @@ Plot.plot({
   height: 260, marginLeft: 50,
   y: {label: "Casos confirmados por mês", grid: true, tickFormat: eixo},
   x: {label: null},
-  marks: [Plot.areaY(leptMes, {x: "data", y: "casos", fill: "teal", fillOpacity: 0.25}),
-          Plot.lineY(leptMes, {x: "data", y: "casos", stroke: "teal", tip: true}),
+  marks: [Plot.areaY(leptMes, {x: "data", y: "casos", fill: cor.primaria, fillOpacity: 0.25}),
+          Plot.lineY(leptMes, {x: "data", y: "casos", stroke: cor.primaria, tip: true}),
           Plot.ruleY([0])]
 })
 ```
@@ -243,7 +258,7 @@ Plot.plot({
   height: 340, marginLeft: 240,
   x: {label: "% dos casos confirmados (todos os anos)", grid: true},
   y: {label: null},
-  marks: [Plot.barX(exposicoes, {y: "categoria", x: "pct", sort: {y: "-x"}, fill: "teal", tip: true}), Plot.ruleX([0])]
+  marks: [Plot.barX(exposicoes, {y: "categoria", x: "pct", sort: {y: "-x"}, fill: cor.primaria, tip: true}), Plot.ruleX([0])]
 })
 ```
 
@@ -309,31 +324,31 @@ Plot.plot({
 
 ## Perguntas por profissão
 
-::: {.lente}
-#### Medicina Veterinária
+::: {.lente .vet}
+#### []{.bi .bi-heart} Medicina Veterinária
 1. Por que o cão é o principal reservatório urbano da leishmaniose visceral? Que dado **animal** você precisaria para explicar o mapa da Parte 1, e por que ele não está aqui?
 2. Na Parte 3, compare a condição do animal agressor entre cães e morcegos. O que explica a diferença?
 3. Qual é o papel do médico-veterinário na observação de cães e gatos agressores por 10 dias?
 4. Que medidas de controle de roedores você proporia para o município com maior incidência de leptospirose no seu estado?
 :::
 
-::: {.lente}
-#### Medicina
+::: {.lente .med}
+#### []{.bi .bi-heart-pulse} Medicina
 1. A letalidade da leishmaniose visceral aumentou enquanto os casos caíram. Formule três hipóteses (biológica, assistencial e de vigilância) e diga que dado testaria cada uma.
 2. Use o perfil por faixa etária: que grupos concentram os casos e como isso mudou?
 3. Por que a coinfecção com HIV importa no prognóstico?
 4. Um paciente chega após mordedura de morcego. Qual é a conduta e por que ela difere da mordedura por cão sadio e observável?
 :::
 
-::: {.lente}
-#### Enfermagem
+::: {.lente .enf}
+#### []{.bi .bi-bandaid} Enfermagem
 1. Observe a proporção de atendimentos antirrábicos com conduta "Observação do animal". Que papel a enfermagem tem no acompanhamento desses casos?
 2. Na leptospirose, que orientações a equipe de saúde deve dar à população após uma enchente? Use o gráfico de exposições.
 3. Que campos com muito "Ignorado" dependem do preenchimento da ficha pela equipe? Qual é o impacto disso na vigilância?
 :::
 
-::: {.lente}
-#### Farmácia
+::: {.lente .far}
+#### []{.bi .bi-capsule} Farmácia
 1. Quais são os medicamentos usados no tratamento da leishmaniose visceral no SUS? Que eventos adversos exigem monitoramento?
 2. A antibioticoterapia precoce muda o prognóstico da leptospirose? Que antibióticos são indicados?
 3. Estime a demanda de vacina e soro antirrábico a partir do gráfico de condutas. Que desafios logísticos isso traz para a assistência farmacêutica?
