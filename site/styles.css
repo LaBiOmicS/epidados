@@ -3,8 +3,10 @@
 
 /* ---------- Base ---------- */
 /* Quebras de linha equilibradas: sem palavra sozinha no fim de títulos e parágrafos */
-h1, h2, .title, .subtitle, .op-sub { text-wrap: balance; }
-p, li, h3, h4, .noticia-dado-texto, .rotulo, small { text-wrap: pretty; }
+/* Só títulos curtos são balanceados; parágrafos seguem o fluxo normal */
+h1, h2, h3, .title { text-wrap: balance; }
+/* O Plot pinta o fundo de branco: deixa transparente para seguir o tema (claro ou escuro) */
+svg[class^="plot-"] { background: transparent !important; }
 main p, main li { hyphens: manual; overflow-wrap: break-word; }
 main li > p { margin-bottom: .35rem; }
 main ul, main ol { padding-left: 1.3rem; }
@@ -83,8 +85,8 @@ a:hover { text-decoration-thickness: 2px; }
 
 /* ---------- Ficha do caso ---------- */
 .ficha {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem 1.5rem;
-  padding: 1.1rem 1.3rem; margin: 0 0 2rem; border-radius: .9rem;
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem 2rem;
+  padding: 1.2rem 1.4rem; margin: 0 0 2rem; border-radius: .9rem;
   background: var(--ed-superficie); border: 1px solid var(--ed-borda);
 }
 .ficha > div > p:first-child { font-size: .75rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ed-mutado); margin-bottom: .2rem; }
@@ -167,7 +169,7 @@ code { font-size: .88em; }
 /* ---------- Celular ---------- */
 @media (max-width: 600px) {
   .porta { padding: 1.25rem 1.15rem 1.1rem; }
-  .ficha { padding: 1rem 1.1rem; }
+  .ficha { padding: 1rem 1.1rem; grid-template-columns: 1fr; gap: .8rem; }
   .lente { padding: 1rem 1rem .9rem 1.1rem; }
   .limites { padding: 2.9rem 1rem 1rem 1rem; }
   .limites::before { left: 1rem; top: .9rem; }
@@ -204,7 +206,6 @@ body:has(.op-hero) #quarto-content { padding: 0 !important; }
 }
 /* O Quarto aplica padding a #quarto-content > *: o seletor precisa ter id */
 #quarto-content > .op-hero, .op-hero { padding: clamp(3rem, 7vw, 5.5rem) 0 clamp(3rem, 6vw, 4.5rem); }
-.op-hero svg[class^="plot-"], .op-escura svg[class^="plot-"] { background: transparent; }
 .op-hero::before { /* grade pontilhada que se move devagar */
   content: ""; position: absolute; inset: -50%;
   background-image: radial-gradient(rgba(255, 255, 255, .09) 1px, transparent 1.2px);
@@ -419,7 +420,6 @@ html.anim .desenhar:not(.visivel) g[aria-label="area"] path { animation: none; }
 }
 .noticia-dado-texto { font-size: .95rem; line-height: 1.55; margin-bottom: .4rem; }
 .noticia-dado .cell-output-display .observablehq > svg, .noticia-dado .cell-output-display .observablehq > figure { background: none; border: 0; padding: 0; }
-.noticia-dado svg[class^="plot-"] { background: transparent; }
 .noticia-dado .cell { margin: 0; }
 
 /* Roteiro de aula */

@@ -40,7 +40,7 @@ cartoes = (itens) => html`<div class="cartoes">${itens.map(([rotulo, valor]) =>
 
 // Mini-série para os quadros "No SINAN" das notícias
 miniSerie = (dados, {y = "casos", destaque = [], rotulo = "casos"} = {}) => Plot.plot({
-  width: estreito ? width - 70 : Math.min(L, 520), height: 130, marginLeft: 44, marginBottom: 24,
+  width: estreito ? width - 70 : Math.min(L, 520), height: 130, marginLeft: d3.max(dados, d => d[y]) >= 10000 ? 54 : 40, marginBottom: 24,
   x: {label: null, tickFormat: d => String(d), ticks: d3.range(2007, 2027, estreito ? 6 : 3)},
   y: {label: null, grid: true, tickFormat: d3.max(dados, d => d[y]) >= 10000 ? eixoMil : eixo, ticks: 3},
   marks: [

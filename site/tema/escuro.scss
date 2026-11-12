@@ -39,6 +39,7 @@ $table-border-color: $ed-borda;
 :root {
   --ed-papel: #{$ed-papel};
   --ed-superficie: #{$ed-superficie};
+  --plot-background: #{$ed-superficie};
   --ed-tinta: #{$ed-tinta};
   --ed-mutado: #{$ed-mutado};
   --ed-borda: #{$ed-borda};

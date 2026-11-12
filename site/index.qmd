@@ -188,7 +188,8 @@ resposta = (certo, texto, grafico) => html`<div class="op-resposta ${certo ? "ce
   <p>${texto}</p><div class="desenhar">${grafico}</div></div>`
 // Largura do cartão: 3 colunas a partir de 960 px, uma coluna abaixo disso
 largDesafio = width >= 960 ? Math.floor((Math.min(width, 1140) - 48 - 2 * 20) / 3) - 50 : Math.min(440, width - 70)
-aguardando = html`<div class="op-aguardando">Escolha uma resposta para revelar o gráfico.</div>`
+// Função: cada desafio precisa do seu próprio elemento
+aguardando = () => html`<div class="op-aguardando">Escolha uma resposta para revelar o gráfico.</div>`
 ```
 
 ::: {.op-desafios}
@@ -202,7 +203,7 @@ viewof p1 = palpite(["aumentou", "ficou estável", "diminuiu"])
 ```
 
 ```{ojs}
-p1 === null ? aguardando : resposta(p1 === "diminuiu",
+p1 === null ? aguardando() : resposta(p1 === "diminuiu",
   html`Os casos confirmados passaram de <strong>${fmt(lvBr[0].casos)}</strong> em ${lvBr[0].ano} para <strong>${fmt(lvBr.at(-1).casos)}</strong> em ${lvBr.at(-1).ano}. Menos casos não significa doença mais branda: a letalidade subiu no mesmo período.`,
   Plot.plot({width: largDesafio, height: 170, marginLeft: 44, y: {grid: true, label: "casos", tickFormat: d => fmt(d)}, x: {label: null, tickFormat: d => String(d), ticks: d3.range(2007, 2027, 6)},
     marks: [Plot.barY(lvBr, {x: "ano", y: "casos", fill: cor.ouro, tip: true}), Plot.ruleY([0])]}))
@@ -220,7 +221,7 @@ viewof p2 = palpite(["jan–mar", "abr–jun", "jul–set", "out–dez"])
 
 ```{ojs}
 trimestre = m => ["jan–mar", "abr–jun", "jul–set", "out–dez"][Math.floor((m - 1) / 3)]
-p2 === null ? aguardando : resposta(p2 === trimestre(picoLept.mes),
+p2 === null ? aguardando() : resposta(p2 === trimestre(picoLept.mes),
   html`O pico é em <strong>${mesesLongo[picoLept.mes - 1]}</strong>, no fim do verão chuvoso. A bactéria sai da urina dos roedores e chega às pessoas pela água das enchentes.`,
   Plot.plot({width: largDesafio, height: 170, marginLeft: 44, y: {grid: true, label: "casos", tickFormat: d => fmt(d)}, x: {label: null, tickFormat: m => largDesafio < 360 ? mesesNome[m - 1][0].toUpperCase() : mesesNome[m - 1]},
     marks: [Plot.barY(leptMes, {x: "mes", y: "casos", fill: d => trimestre(d.mes) === p2 ? cor.ouro : cor.clara, tip: true}), Plot.ruleY([0])]}))
@@ -241,7 +242,7 @@ especies = d3.rollups(antrUf.filter(d => !["Ignorado", "Outro"].includes(d.espec
   .map(([especie, n]) => ({especie, n})).sort((a, b) => b.n - a.n)
 segundo = especies[1].especie
 rotuloP3 = ({"Gato": "Gato", "Morcego": "Morcego", "Macaco": "Primata (macaco)", "Cavalo ou boi": "Herbívoro doméstico"})
-p3 === null ? aguardando : resposta(rotuloP3[p3] === segundo,
+p3 === null ? aguardando() : resposta(rotuloP3[p3] === segundo,
   html`É o <strong>${segundo.toLowerCase()}</strong>. Mas repare no morcego: são poucos atendimentos, e a maioria recebe soro além da vacina, porque toda mordida de morcego é tratada como exposição grave à raiva.`,
   Plot.plot({width: largDesafio, height: 190, marginLeft: 130, x: {label: "atendimentos (todos os anos)", grid: true, tickFormat: d => fmt(d / 1e6, 1) + " mi"}, y: {label: null, domain: especies.map(d => d.especie)},
     marks: [Plot.barX(especies, {y: "especie", x: "n", fill: d => d.especie === rotuloP3[p3] ? cor.ouro : cor.clara, tip: true}), Plot.ruleX([0])]}))
