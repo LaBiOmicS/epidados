@@ -146,7 +146,7 @@ def _get_json(url: str, destino: Path, forcar: bool = False):
 def atualizar_referencia_ibge() -> None:
     """Copia o cache local do IBGE (baixado no Brasil) para referencia/ibge/, comprimido."""
     REFERENCIA_IBGE.mkdir(parents=True, exist_ok=True)
-    usados = re.compile(r"^(malha_municipio|malha_uf|municipios|periodos_6579|pop_\d{4})\.json$")
+    usados = re.compile(r"^(malha_municipio|malha_uf|municipios|periodos_6579|pop_20\d{2})\.json$")
     for arq in sorted(p for p in (RAW / "ibge").glob("*.json") if usados.match(p.name)):
         (REFERENCIA_IBGE / f"{arq.name}.gz").write_bytes(gzip.compress(arq.read_bytes(), 9))
         log.info("referência atualizada: %s", arq.name)
