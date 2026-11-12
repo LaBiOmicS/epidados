@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import datetime as dt
 import logging
+import os
 import tempfile
+from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
 import pandas as pd
@@ -64,11 +66,20 @@ def converter(arq: ArquivoSinan) -> Path:
     return destino
 
 
-def preparar(agravo: str, anos: list[int] | None = None) -> list[Path]:
-    arquivos = inventario(agravo)
-    if anos:
-        arquivos = [a for a in arquivos if a.ano in anos]
-    return [converter(a) for a in arquivos]
+def preparar(agravos: list[str], anos: list[int] | None = None, processos: int | None = None) -> list[Path]:
+    """Baixa e converte os arquivos dos agravos em paralelo (um processo por arquivo).
+
+    Os arquivos maiores (ex.: ANTR, ~600 mil registros/ano) vão primeiro, para os
+    processos terminarem juntos."""
+    arquivos = [a for ag in agravos for a in inventario(ag) if not anos or a.ano in anos]
+    arquivos.sort(key=lambda a: a.tamanho, reverse=True)
+    nivel = logging.getLogger().level
+    with ProcessPoolExecutor(processos or os.cpu_count(), initializer=_configurar_log, initargs=(nivel,)) as ex:
+        return list(ex.map(converter, arquivos))
+
+
+def _configurar_log(nivel: int) -> None:
+    logging.basicConfig(level=nivel, format="%(asctime)s %(levelname)s %(message)s")
 
 
 # ------------------------------------------------------------ harmonização

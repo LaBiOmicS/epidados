@@ -28,10 +28,13 @@ jobs:
         with:
           enable-cache: true
 
-      - name: Cache dos arquivos do DATASUS e do IBGE
-        uses: actions/cache@v4
+      # Só o Parquet convertido e o IBGE: com o Parquet em dia, os .dbc nem são baixados.
+      - name: Restaurar cache dos dados
+        uses: actions/cache/restore@v4
         with:
-          path: cache
+          path: |
+            cache/parquet
+            cache/raw/ibge
           key: datasus-${{ github.run_id }}
           restore-keys: datasus-
 
@@ -40,6 +43,15 @@ jobs:
 
       - name: Baixar e converter dados (incremental)
         run: uv run epidados preparar
+
+      # Salva logo após o download, mesmo que uma etapa seguinte falhe.
+      - name: Salvar cache dos dados
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            cache/parquet
+            cache/raw/ibge
+          key: datasus-${{ github.run_id }}
 
       - name: Malhas, agregações e datasets
         run: |

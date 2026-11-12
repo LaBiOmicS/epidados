@@ -27,8 +27,7 @@ def main(argv: list[str] | None = None) -> int:
 
     agravos = args.agravos or list(AGRAVOS)
     if args.etapa in ("preparar", "tudo"):
-        for ag in agravos:
-            sinan.preparar(ag)
+        sinan.preparar(agravos)
     if args.etapa in ("malhas", "tudo"):
         ibge.exportar_malhas()
     if args.etapa in ("agregar", "ml", "tudo"):
