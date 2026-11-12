@@ -1,0 +1,101 @@
+---
+title: "Roteiro do professor: Zoonoses e Saúde Única"
+subtitle: "Respostas comentadas. Não distribuir aos alunos antes da atividade."
+lang: pt-BR
+format:
+  typst:
+    papersize: a4
+    margin:
+      x: 2cm
+      y: 2cm
+    fontsize: 10.5pt
+    toc: false
+---
+
+*Números calculados a partir dos dados do site (SINAN/DATASUS e IBGE), extração de novembro de 2026. Os totais de confirmados batem exatamente com o TabNet.*
+
+# Planejamento sugerido
+
+| Momento | Duração | Atividade |
+|---|---|---|
+| Abertura | 10 min | O que é Saúde Única? Por que olhar dados humanos para falar de animais? |
+| Parte 1 | 25 min | Leishmaniose visceral: casos, letalidade e mudança de perfil |
+| Parte 2 | 20 min | Leptospirose: sazonalidade e as enchentes do RS em 2024 |
+| Parte 3 | 20 min | Atendimento antirrábico: espécies, condição do animal e conduta |
+| Lentes | 15 min | Grupos por profissão respondem às perguntas da sua área |
+| Fechamento | 10 min | Limites do dado: o que falta para uma análise de Saúde Única completa? |
+
+# Parte 1. Leishmaniose visceral
+
+**Fatos principais**
+
+- Casos confirmados: **3.565 em 2007** e **1.612 em 2025**, com queda acentuada a partir de 2019.
+- Letalidade (óbitos por LV / confirmados): **5,4% em 2007** e entre **8% e 9%** desde 2021.
+- Mudança de perfil (2007–09 contra 2023–25):
+  - crianças de 0 a 4 anos: de **39%** para **16%** dos casos;
+  - adultos de 40 a 59 anos: de **13%** para **31%**;
+  - coinfecção por HIV: de **4%** para **26%** dos casos (o "Ignorado" também caiu muito, de 29% para 10%).
+- Distribuição regional (2007–09 contra 2023–25): Nordeste de **49%** para **56%**; Norte de **21%** para **14%**; Sudeste de **21%** para **18%**; Sul de **0,1%** para **0,9%**.
+
+**Respostas esperadas**
+
+*Por que a letalidade subiu enquanto os casos caíram?* Bons alunos chegam a três grupos de hipóteses:
+
+1. **Perfil dos pacientes.** Mais adultos, mais idosos e mais coinfecção por HIV: grupos de maior letalidade. No dataset de IA, a letalidade vai de cerca de 3% (5 a 19 anos) a 27% (60 anos ou mais).
+2. **Assistência.** Diagnóstico e tratamento tardios, acesso a anfotericina B lipossomal.
+3. **Vigilância.** Se casos leves deixam de ser notificados, sobram os graves e a letalidade sobe sem que a doença tenha piorado. Discuta também a melhora no preenchimento do campo HIV: parte do aumento da coinfecção pode ser **mais testagem**, não só mais coinfecção.
+
+*O mapa mostra a doença?* Mostra a **notificação** da doença no município de residência. Municípios pequenos dominam a incidência por instabilidade (um caso em 2 mil habitantes = 50 por 100 mil).
+
+*Que dado animal falta?* Soroprevalência canina, eutanásias e encoleiramento, e densidade do vetor. Não há base nacional aberta: os dados ficam com os municípios (CCZ) e os estados.
+
+# Parte 2. Leptospirose
+
+**Fatos principais**
+
+- Brasil: 1.800 a 5.000 casos confirmados por ano; letalidade entre **7% e 10,5%**.
+- **80% dos casos são homens**: exposição ocupacional e em limpeza pós-enchente.
+- **Rio Grande do Sul, 2024**: **1.312 casos** por data de início dos sintomas, sendo **599 só em maio**, mês das enchentes. Num maio típico, o estado tem de 10 a 100 casos. A incidência anual foi de **11,9 por 100 mil**, contra 1,6 a 4,2 nos quatro anos anteriores.
+- Exposições mais relatadas (Brasil, todos os anos): **local com sinais de roedores (54%)**, **água ou lama de enchente (41%)**, lixo ou entulho (29%), rio ou córrego (29%), criação de animais (29%).
+
+**Respostas esperadas**
+
+- No Brasil como um todo, **janeiro a abril concentram cerca de metade dos casos (49%)**, e agosto e setembro são os meses mais baixos (cerca de 5% cada), acompanhando a estação chuvosa na maior parte do país. Peça aos alunos que comparem UFs de regiões diferentes: o padrão não é igual em todo o país.
+- O pico de 2024 no RS cai em **maio e se estende a junho**, compatível com o período de incubação (1 a 30 dias, geralmente 5 a 14) após as enchentes do fim de abril e de maio. Os dados são mensais: não permitem medir o atraso em dias.
+- As exposições somam mais de 100% porque cada caso pode marcar mais de uma.
+- Orientações: botas e luvas na limpeza, não andar descalço na água, procurar atendimento ao primeiro sintoma após exposição (febre, mialgia na panturrilha).
+
+# Parte 3. Atendimento antirrábico
+
+**Fatos principais**
+
+- Atendimentos por ano: **513 mil em 2007** e **779 mil em 2024** (2025, preliminar: 886 mil).
+- **Cães** respondem por 77% a 85% dos atendimentos, mas a participação cai; a de **gatos** sobe de **11% (2007)** para **17% (2024)**.
+- Atendimentos por **morcego**: de **3,9 mil em 2007** para **9,4 mil em 2024** (13,4 mil em 2025, preliminar).
+- Condição do animal (todo o período): cão **sadio em 70%**; morcego **sadio em só 4%**, **morto ou desaparecido em 53%** e suspeito em 30%. Herbívoros: **14% raivosos**.
+- Conduta: para cães, **69%** envolvem observação do animal (com ou sem vacina) e **6%** soro + vacina. Para morcegos, **68% soro + vacina** e **17% só vacina**.
+
+**Respostas esperadas**
+
+- *Por que a diferença entre cão e morcego?* Cães e gatos domiciliados podem ser observados por 10 dias: se o animal continuar sadio, não transmitia raiva no momento da agressão. O morcego raramente é capturado e observado, e a raiva em morcegos é endêmica no país. Hoje, a maioria dos casos de raiva humana no Brasil está ligada a morcegos e a outros animais silvestres, não a cães.
+- *Ponto para debate:* o protocolo classifica toda exposição a morcego como grave, com soro + vacina, mas 17% dos atendimentos registram só vacina. Hipóteses: falta de soro, uso de protocolos antigos, erro de registro ou pessoas com pré-exposição. Bom exemplo de como dados de notificação podem revelar problemas de assistência.
+- *Por que aumentam os atendimentos por gato e por morcego?* Hipóteses: mais gatos nos domicílios, maior consciência do risco e mais registro. Os dados não permitem separar essas explicações.
+- *Herbívoros com 14% raivosos:* a raiva dos herbívoros (bovinos, equinos) é transmitida principalmente pelo morcego hematófago, e quem se expõe são tratadores e veterinários. Um ótimo ponto de Saúde Única.
+- O mapa por espécie mostra onde se concentram as agressões por morcego. Atenção: altas taxas podem refletir vigilância ativa, não só risco.
+
+# Lentes por profissão: pontos-chave
+
+**Medicina Veterinária.** O cão é o principal reservatório urbano da LV (alta parasitemia na pele, contato próximo com pessoas). Na raiva, cães e gatos sadios e observáveis permitem a **observação por 10 dias** em vez da profilaxia completa. O morcego quase nunca é observável e tem papel central na raiva no Brasil atual.
+
+**Medicina.** A letalidade da LV cresce com idade e HIV; fenômenos hemorrágicos e icterícia são sinais de gravidade (veja o dataset de IA). Para mordedura por morcego, a exposição é sempre classificada como grave e a conduta é **soro + vacina**, independentemente do tamanho do ferimento (exceto em quem já recebeu esquema pré-exposição, que segue o esquema de reexposição).
+
+**Enfermagem.** Acompanhamento da observação do animal, busca ativa de faltosos ao esquema vacinal, educação em saúde pós-enchente. O excesso de "Ignorado" depende do preenchimento da ficha.
+
+**Farmácia.** LV: antimoniato de meglumina, anfotericina B (desoxicolato e lipossomal). Monitorar cardiotoxicidade e nefrotoxicidade. Leptospirose: penicilina, ampicilina, ceftriaxona ou doxiciclina, com início precoce. Raiva: logística de soro e vacina, rede de frio.
+
+# Limites para discutir no fechamento
+
+1. Não há dado animal nacional aberto. O que a vigilância brasileira mede bem e o que mede mal?
+2. Notificação não é ocorrência real: a qualidade da vigilância varia.
+3. Atendimento antirrábico não é caso de raiva.
+4. A população de 2022 (Censo) é menor que as estimativas anteriores; a incidência "pula".

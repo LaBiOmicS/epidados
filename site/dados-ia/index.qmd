@@ -1,0 +1,44 @@
+---
+title: "Dados para IA"
+subtitle: "Datasets reais do SUS para aulas de machine learning, estatística e ciência de dados"
+toc: false
+---
+
+Os datasets clássicos de ensino (Iris, Titanic) são limpos demais. Estes vêm de dados reais de saúde pública do Brasil e **mantêm os problemas do mundo real**, documentados:
+
+- **desbalanceamento** do desfecho;
+- valores **"Ignorado"** que não podem ser simplesmente apagados;
+- **mudança de distribuição** ao longo do tempo;
+- variáveis sensíveis que permitem discutir **viés e equidade**.
+
+## Datasets disponíveis
+
+| Dataset | Tarefa | Linhas | Bom para ensinar |
+|---|---|---|---|
+| [Óbito por leishmaniose visceral](leishmaniose-obito.qmd) | Classificação binária desbalanceada | ~45 mil | Métricas além da acurácia, separação temporal, categorias "Ignorado", interpretação |
+
+Em preparação: **baixo peso ao nascer** (SINASC, classificação e regressão) e **dengue semanal por UF** (séries temporais).
+
+## Como carregar
+
+```python
+import pandas as pd
+
+df = pd.read_csv("https://labiomics.github.io/epidados/dados-ia/arquivos/leishmaniose_obito.csv")
+```
+
+Cada dataset tem uma versão **mini** (5 mil linhas, para aula) e uma **completa**.
+
+## Privacidade
+
+Os microdados do DATASUS já são públicos e anonimizados. Mesmo assim, os datasets daqui reduzem o detalhe para diminuir o risco de reidentificação:
+
+- **município → região**;
+- **data → ano**;
+- **idade limitada a 90 anos**.
+
+Agravos sensíveis (como violência e HIV) **não** são publicados em nível individual.
+
+::: {.callout-warning}
+Os modelos treinados com estes dados são **exercícios**. Eles não foram validados para uso clínico e não devem orientar decisões sobre pacientes.
+:::

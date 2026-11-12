@@ -1,0 +1,68 @@
+name: Atualizar dados e publicar site
+
+on:
+  schedule:
+    - cron: "0 6 5 * *"   # todo dia 5, às 06:00 UTC
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["site/**", "src/**", "notebooks/**", ".github/workflows/**"]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  construir:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Cache dos arquivos do DATASUS e do IBGE
+        uses: actions/cache@v4
+        with:
+          path: cache
+          key: datasus-${{ github.run_id }}
+          restore-keys: datasus-
+
+      - name: Instalar dependências
+        run: uv sync --all-groups
+
+      - name: Baixar e converter dados (incremental)
+        run: uv run epidados preparar
+
+      - name: Malhas, agregações e datasets
+        run: |
+          uv run epidados malhas
+          uv run epidados agregar
+          uv run epidados ml
+
+      - name: Testes de validação
+        run: uv run pytest -q
+
+      - name: Gerar site
+        run: uv run quarto render site
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site/_site
+
+  publicar:
+    needs: construir
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4

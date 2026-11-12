@@ -1,0 +1,39 @@
+project:
+  type: website
+  output-dir: _site
+  resources:
+    - dados/**
+    - dados-ia/arquivos/**
+
+lang: pt-BR
+
+website:
+  title: "EpiDados"
+  description: "Dados reais do DATASUS para ensinar saúde e ciência de dados"
+  page-navigation: true
+  navbar:
+    left:
+      - href: index.qmd
+        text: Início
+      - text: Estudos de caso
+        menu:
+          - href: casos/zoonoses.qmd
+            text: "Zoonoses e Saúde Única"
+      - href: dados-ia/index.qmd
+        text: Dados para IA
+      - href: metodologia.qmd
+        text: Metodologia
+  page-footer:
+    left: "Dados: SINAN/DATASUS e IBGE. Material didático, não usar para decisões clínicas."
+    right: "Código MIT · Textos e dados CC BY 4.0"
+
+format:
+  html:
+    theme:
+      light: cosmo
+      dark: darkly
+    css: styles.css
+    toc: true
+    toc-title: "Nesta página"
+    smooth-scroll: true
+    code-tools: false

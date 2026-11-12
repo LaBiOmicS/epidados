@@ -1,0 +1,70 @@
+---
+title: "Metodologia"
+subtitle: "De onde vêm os números e quais decisões tomamos"
+execute:
+  echo: false
+---
+
+```{ojs}
+//| echo: false
+meta = FileAttachment("dados/metadados.json").json()
+```
+
+## Fontes
+
+| Fonte | O que usamos | Endereço |
+|---|---|---|
+| SINAN (DATASUS) | Microdados de leishmaniose visceral, leptospirose e atendimento antirrábico humano | `ftp.datasus.gov.br/dissemin/publicos/SINAN/DADOS` |
+| IBGE | Lista de municípios, população por município e ano, malhas territoriais | APIs de localidades, SIDRA e malhas |
+
+```{ojs}
+md`Os dados são baixados e processados automaticamente todo mês. Última atualização: **${new Date(meta.gerado_em).toLocaleDateString("pt-BR")}**.`
+```
+
+## Anos disponíveis
+
+```{ojs}
+//| echo: false
+Inputs.table(
+  Object.entries(meta.agravos).flatMap(([cod, a]) =>
+    a.anos.map(d => ({agravo: a.nome, ano: d.ano, situação: d.situacao, registros: d.registros}))
+  ),
+  {format: {ano: d => String(d), registros: d => d.toLocaleString("pt-BR")}, rows: 12}
+)
+```
+
+Dados **preliminares** ainda podem mudar: o DATASUS os revisa até o fechamento da base, que costuma ocorrer um a dois anos depois.
+
+## Regras de tratamento
+
+1. **Casos confirmados.** Para leishmaniose visceral e leptospirose, contamos apenas os casos com classificação final "confirmado". O atendimento antirrábico não tem essa classificação: cada registro é um atendimento.
+2. **Município de residência.** Os casos são atribuídos ao município onde a pessoa mora, não ao que notificou.
+3. **Ano.** O ano é o da notificação, que é como o DATASUS organiza os arquivos. Nas séries mensais usamos a data dos primeiros sintomas, mais adequada para ver a sazonalidade.
+4. **Códigos de município.** O SINAN usa 6 dígitos e o IBGE usa 7; convertemos tudo para 7.
+5. **Óbito pelo agravo.** A letalidade conta somente os óbitos pelo próprio agravo, não por outras causas.
+6. **Supressão.** Nas tabelas de perfil, valores entre 1 e 4 casos aparecem vazios.
+7. **Datasets de IA.** Município vira região, data vira ano e a idade é limitada a 90 anos.
+
+## Armadilhas que você vai encontrar
+
+::: {.limites}
+**População e o Censo 2022.** As estimativas do IBGE para 2021 superestimavam a população; o Censo 2022 registrou cerca de 10 milhões de pessoas a menos. Por isso a incidência pode "pular" entre 2021 e 2022 sem que nada tenha mudado de fato. Os anos 2007 e 2023, sem estimativa oficial, foram interpolados.
+
+**Notificado não é real.** O SINAN mostra o que chegou ao sistema. Diferenças entre municípios podem refletir a qualidade da vigilância, e não só a ocorrência da doença.
+
+**"Ignorado" é uma resposta.** Muitos campos têm o código 9 (ignorado) ou ficam em branco. Em algumas variáveis isso passa de 30%.
+
+**Números pequenos.** Em municípios pequenos, um único caso gera uma incidência enorme. Desconfie de mapas dominados por municípios com poucos habitantes.
+
+**A ficha muda com o tempo.** Campos podem surgir, sumir ou mudar de categorias entre os anos.
+:::
+
+## Código e reprodutibilidade
+
+Todo o processamento é feito em Python com DuckDB, e o código é aberto. Qualquer pessoa pode refazer os números a partir dos arquivos originais do DATASUS.
+
+## Como citar
+
+```{ojs}
+md`> EpiDados: dados do DATASUS para ensino em saúde e ciência de dados. Versão ${meta.gerado_em.slice(0, 10)}. Dados: Ministério da Saúde/SINAN e IBGE.`
+```

@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+cache/
+site/_site/
+site/.quarto/
+site/dados/
+site/dados-ia/arquivos/*.csv
+site/dados-ia/arquivos/*.json
+site/dados-ia/arquivos/*.ipynb
+.ipynb_checkpoints/
+.quarto/

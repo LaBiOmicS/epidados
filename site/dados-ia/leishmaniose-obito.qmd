@@ -1,0 +1,105 @@
+---
+title: "Óbito por leishmaniose visceral"
+subtitle: "Classificação binária desbalanceada com dados do SINAN"
+execute:
+  echo: false
+---
+
+```{ojs}
+//| output: false
+resumo = FileAttachment("arquivos/leishmaniose_obito.json").json()
+fmt = (v, c = 0) => v.toLocaleString("pt-BR", {minimumFractionDigits: c, maximumFractionDigits: c})
+```
+
+```{ojs}
+html`<div class="cartoes">${[
+  ["Casos", fmt(resumo.linhas)],
+  ["Óbitos (classe positiva)", fmt(100 * resumo.prevalencia_alvo, 1) + "%"],
+  ["Anos", `${resumo.anos[0]}–${resumo.anos[1]}`],
+  ["Variáveis", fmt(resumo.colunas.length - 1)]
+].map(([r, v]) => html`<div class="cartao"><small>${r}</small><div class="destaque-numero">${v}</div></div>`)}</div>`
+```
+
+## Downloads
+
+| Arquivo | Conteúdo |
+|---|---|
+| [leishmaniose_obito.csv](arquivos/leishmaniose_obito.csv) | Dataset completo |
+| [leishmaniose_obito_mini.csv](arquivos/leishmaniose_obito_mini.csv) | Amostra de 5 mil linhas, estratificada pelo desfecho |
+| [leishmaniose_obito.ipynb](arquivos/leishmaniose_obito.ipynb) | Notebook de linha de base para Jupyter |
+
+[Abrir o notebook no Google Colab](https://colab.research.google.com/github/LaBiOmicS/epidados/blob/main/notebooks/leishmaniose_obito.ipynb){.btn .btn-primary}
+
+## Ficha técnica
+
+### Motivação
+Ensinar classificação em dados de saúde reais, com desbalanceamento, categorias "Ignorado" e mudança de distribuição no tempo. A leishmaniose visceral foi escolhida porque é uma zoonose grave, de notificação compulsória, e com fatores de risco clínicos conhecidos, o que permite discutir se o modelo "aprendeu o que faz sentido".
+
+### Origem
+Fichas de investigação de leishmaniose visceral do SINAN (Ministério da Saúde/DATASUS), arquivos finais de 2007 em diante.
+
+### Quem entra
+- Casos com classificação final **confirmado**;
+- Evolução **cura** (`obito = 0`) ou **óbito por leishmaniose visceral** (`obito = 1`);
+- **Saem**: abandono, óbito por outras causas, transferência, mudança de diagnóstico e evolução em branco, além de casos sem idade ou sem município de residência válido. Essa seleção é discutível de propósito: veja a pergunta 4 abaixo.
+
+### Variáveis
+
+| Variável | Tipo | Descrição |
+|---|---|---|
+| `ano` | inteiro | Ano da notificação |
+| `regiao` | categórica | Região de residência |
+| `idade` | inteiro | Idade em anos (menores de 1 ano = 0; limitada a 90) |
+| `sexo`, `raca_cor`, `gestante` | categórica | Dados demográficos |
+| `febre`, `fraqueza`, `edema`, `emagrecimento`, `tosse_diarreia`, `palidez`, `esplenomegalia`, `quadro_infeccioso`, `fenomenos_hemorragicos`, `hepatomegalia`, `ictericia` | Sim / Não / Ignorado | Manifestações clínicas registradas na ficha |
+| `coinfeccao_hiv` | Sim / Não / Ignorado | Coinfecção pelo HIV |
+| `exame_parasitologico`, `exame_ifi` | Positivo / Negativo / Não realizado / Ignorado | Exames diagnósticos |
+| `tipo_entrada` | categórica | Caso novo, recidiva ou transferência |
+| **`obito`** | **0/1** | **Alvo**: 1 = óbito por leishmaniose visceral |
+
+### Proporção de "Ignorado" por variável
+
+```{ojs}
+Plot.plot({
+  height: 360, marginLeft: 170,
+  x: {label: "% Ignorado", percent: true, grid: true},
+  y: {label: null},
+  marks: [
+    Plot.barX(Object.entries(resumo.pct_ignorado).map(([variavel, p]) => ({variavel, p})),
+      {y: "variavel", x: "p", sort: {y: "-x"}, fill: "gray", tip: true}),
+    Plot.ruleX([0])
+  ]
+})
+```
+
+### Linha de base
+Treino com casos até 2019 e teste com casos de 2020 em diante. Resultados do notebook:
+
+| Modelo | Acurácia | Acurácia balanceada | AUC-ROC | AUC-PR | Recall | Precisão |
+|---|---|---|---|---|---|---|
+| Sempre "não morreu" | 0,883 | 0,500 | 0,500 | 0,117 | 0,000 | 0,000 |
+| Regressão logística | 0,614 | 0,665 | 0,737 | 0,300 | 0,732 | 0,195 |
+| Gradient boosting | 0,646 | 0,676 | 0,752 | 0,317 | 0,715 | 0,208 |
+
+O modelo trivial tem a **maior acurácia** e não detecta **nenhum** óbito: esse é o primeiro ponto da aula.
+
+### Armadilhas conhecidas
+- **Mudança de distribuição:** a proporção de óbitos subiu ao longo dos anos (cerca de 9% no treino e 12% no teste).
+- **Variáveis possivelmente posteriores ao desfecho:** algumas manifestações podem ter sido registradas já com o paciente grave. Discuta o que estaria disponível no momento da decisão clínica.
+- **Qualidade do preenchimento:** "Ignorado" varia por região e por ano, então o modelo pode aprender padrões do serviço em vez de padrões da doença.
+- **Viés de seleção:** quem morre antes da investigação ou não é notificado não aparece.
+
+### Usos indevidos
+Não use para triagem ou prognóstico de pacientes reais, nem para comparar a qualidade de serviços ou regiões sem considerar as diferenças de notificação.
+
+## Perguntas para a turma
+
+1. Por que o modelo "sempre não morreu" tem a maior acurácia? Que métrica você apresentaria a um gestor de saúde?
+2. Mude o limiar de decisão. Como recall e precisão se movem? Quando você preferiria cada um?
+3. Inclua `ano` como variável. O resultado no teste melhora? O que isso diz sobre a separação temporal?
+4. Recoloque os óbitos por outras causas como `obito = 1`. A pergunta continua a mesma?
+5. Calcule o recall por `regiao` e por `raca_cor`. O modelo erra mais para algum grupo?
+6. A importância de uma variável indica causa? Dê um exemplo em que essa leitura seria errada.
+
+## Como citar
+EpiDados. *Óbito por leishmaniose visceral* [dataset didático]. Dados: Ministério da Saúde, SINAN/DATASUS.

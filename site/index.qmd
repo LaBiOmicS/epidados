@@ -1,0 +1,47 @@
+---
+title: "EpiDados"
+subtitle: "Dados reais do SUS para ensinar saúde, epidemiologia e ciência de dados"
+toc: false
+---
+
+Este site transforma dados públicos do **DATASUS** em material de aula. Os dados são reais, vêm do Sistema de Informação de Agravos de Notificação (SINAN), são atualizados todo mês e acompanham as armadilhas que quem trabalha com dados de saúde precisa aprender a reconhecer.
+
+## Duas portas de entrada
+
+::: {.cartoes}
+::: {.cartao}
+### Estudos de caso
+Problemas reais de saúde vistos por várias profissões: **veterinária, medicina, farmácia, enfermagem e odontologia**. Cada caso traz mapa, séries históricas, perguntas por profissão e um quadro com os limites do dado.
+
+[Zoonoses e Saúde Única →](casos/zoonoses.qmd)
+:::
+
+::: {.cartao}
+### Dados para IA
+Datasets prontos para **scikit-learn**, com ficha técnica, notebook de linha de base e problemas reais preservados: desbalanceamento, valores ignorados e vazamento de dados.
+
+[Ver datasets →](dados-ia/index.qmd)
+:::
+:::
+
+## Como usar em aula
+
+1. **Antes da aula:** o professor escolhe um estudo de caso e a lente da sua profissão.
+2. **Em aula:** os alunos exploram o mapa e os gráficos e respondem às perguntas.
+3. **Aprofundamento:** os dados estão disponíveis para download em CSV, para análise no Excel, no R ou no Python.
+
+Os roteiros com respostas comentadas ficam numa área separada para professores.
+
+## Estado do projeto
+
+Esta é a primeira versão. Já estão disponíveis:
+
+- **Estudo de caso:** Zoonoses e Saúde Única (leishmaniose visceral, leptospirose e atendimento antirrábico)
+- **Dataset de IA:** óbito por leishmaniose visceral
+
+Em preparação: sífilis congênita, intoxicações exógenas, acidentes com material biológico, violência, distribuição dos profissionais de saúde e os datasets de baixo peso ao nascer e de dengue.
+
+::: {.callout-warning}
+## Uso responsável
+Este é um material **didático**. Notificação não é sinônimo de incidência real, e os modelos treinados com estes dados não devem ser usados em decisões clínicas. Veja a [metodologia](metodologia.qmd).
+:::

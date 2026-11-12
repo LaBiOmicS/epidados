@@ -1,0 +1,32 @@
+[project]
+name = "epidados"
+version = "0.1.0"
+description = "Dados do DATASUS para ensino em saúde e ciência de dados"
+authors = [
+    { name = "Fabiano Menegidio", email = "labiomics@bioinformatica.com.br" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "dbfread>=2.0.7",
+    "duckdb>=2.0.0",
+    "pandas>=3.1.1",
+    "pyarrow>=26.0.1",
+    "pyreaddbc>=2.0.4",
+    "requests>=2.34.2",
+]
+
+[project.scripts]
+epidados = "epidados:main"
+
+[build-system]
+requires = ["uv_build>=0.12.19,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "jupyter>=1.1.1",
+    "matplotlib>=3.11.2",
+    "pytest>=9.2.0",
+    "quarto-cli>=1.11.9",
+    "scikit-learn>=1.9.1",
+]
