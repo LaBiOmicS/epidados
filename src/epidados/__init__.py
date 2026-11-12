@@ -9,10 +9,16 @@ import sys
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="epidados", description=__doc__)
-    parser.add_argument("etapa", choices=["preparar", "agregar", "ml", "malhas", "tudo"], default="tudo", nargs="?")
+    parser.add_argument("etapa", choices=["preparar", "agregar", "ml", "malhas", "referencia", "tudo"], default="tudo", nargs="?")
     parser.add_argument("--agravos", nargs="*", default=None, help="ex.: LEIV LEPT ANTR")
     args = parser.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s", stream=sys.stderr)
+
+    if args.etapa == "referencia":
+        from .baixar import atualizar_referencia_ibge
+
+        atualizar_referencia_ibge()
+        return 0
 
     import duckdb
 

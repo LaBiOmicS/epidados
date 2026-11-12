@@ -3,16 +3,18 @@
 from __future__ import annotations
 
 import ftplib
+import gzip
 import json
 import logging
 import re
 import time
+from urllib.parse import urlparse
 from dataclasses import dataclass
 from pathlib import Path
 
 import requests
 
-from .config import ANO_INICIAL, FTP_HOST, FTP_SINAN, RAW
+from .config import ANO_INICIAL, FTP_HOST, FTP_SINAN, RAW, REFERENCIA_IBGE
 
 log = logging.getLogger(__name__)
 
@@ -100,23 +102,54 @@ IBGE_MALHA = (
     "?formato=application/vnd.geo%2Bjson&qualidade=minima&intrarregiao={nivel}"
 )
 SIDRA = "https://apisidra.ibge.gov.br/values"
+_HOSTS_FORA: set[str] = set()
 
 
 def _get_json(url: str, destino: Path, forcar: bool = False):
+    """Lê do cache; senão baixa; se a API do IBGE não responder, usa a cópia versionada
+    em referencia/ibge/ (a API costuma recusar conexões de fora do Brasil, como as dos
+    runners do GitHub Actions)."""
     if destino.exists() and not forcar:
         return json.loads(destino.read_text())
     destino.parent.mkdir(parents=True, exist_ok=True)
+    host = urlparse(url).hostname
     for i in range(1, 4):
+        if host in _HOSTS_FORA:
+            break
         try:
-            r = requests.get(url, timeout=180)
+            r = requests.get(url, timeout=(20, 180))
             r.raise_for_status()
             dados = r.json()
             destino.write_text(json.dumps(dados))
             return dados
+        except (requests.ConnectionError, requests.ConnectTimeout) as erro:
+            log.warning("falha em %s (tentativa %d): %s", url, i, erro)
+            if i == 3:
+                _HOSTS_FORA.add(host)  # não insiste nas próximas URLs do mesmo host
+            else:
+                time.sleep(5 * i)
         except (requests.RequestException, ValueError) as erro:
             log.warning("falha em %s (tentativa %d): %s", url, i, erro)
             time.sleep(5 * i)
+    if destino.exists():
+        log.warning("usando cache existente para %s", destino.name)
+        return json.loads(destino.read_text())
+    copia = REFERENCIA_IBGE / f"{destino.name}.gz"
+    if copia.exists():
+        log.warning("API indisponível; usando cópia versionada %s", copia.relative_to(copia.parents[2]))
+        dados = json.loads(gzip.decompress(copia.read_bytes()))
+        destino.write_text(json.dumps(dados))
+        return dados
     raise RuntimeError(f"não foi possível obter {url}")
+
+
+def atualizar_referencia_ibge() -> None:
+    """Copia o cache local do IBGE (baixado no Brasil) para referencia/ibge/, comprimido."""
+    REFERENCIA_IBGE.mkdir(parents=True, exist_ok=True)
+    usados = re.compile(r"^(malha_municipio|malha_uf|municipios|periodos_6579|pop_\d{4})\.json$")
+    for arq in sorted(p for p in (RAW / "ibge").glob("*.json") if usados.match(p.name)):
+        (REFERENCIA_IBGE / f"{arq.name}.gz").write_bytes(gzip.compress(arq.read_bytes(), 9))
+        log.info("referência atualizada: %s", arq.name)
 
 
 def ibge_municipios():

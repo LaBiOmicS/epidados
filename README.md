@@ -45,13 +45,15 @@ A primeira execução leva cerca de 25 minutos, quase todo o tempo no atendiment
 
 O workflow `.github/workflows/publicar.yml` baixa os dados, roda os testes, gera o site e publica no GitHub Pages (Settings → Pages → Source: GitHub Actions). Ele roda todo dia 5, a cada push na branch `main` e manualmente em **Actions → Atualizar dados e publicar site → Run workflow**.
 
+As APIs do IBGE (`servicodados` e `apisidra`) costumam recusar conexões de fora do Brasil, como as dos runners do GitHub. Por isso o repositório guarda em `referencia/ibge/` uma cópia comprimida (~2,6 MB) de municípios, malhas e população, usada quando a API não responde. Quando o IBGE publicar novas estimativas, rode localmente (no Brasil) `uv run epidados agregar` e depois `uv run epidados referencia` e faça commit de `referencia/`.
+
 
 ## Estrutura
 
 ```
 src/epidados/
   config.py      agravos, colunas e caminhos
-  baixar.py      FTP do DATASUS e APIs do IBGE, com cache
+  baixar.py      FTP do DATASUS e APIs do IBGE, com cache e fallback
   sinan.py       .dbc → Parquet; view harmonizada no DuckDB
   ibge.py        municípios, população anual, malhas
   codigos.py     rótulos dos códigos das fichas
@@ -59,6 +61,7 @@ src/epidados/
   ml.py          datasets de machine learning
 notebooks/       notebooks de linha de base (gerados por _gerar_notebooks.py)
 site/            projeto Quarto
+referencia/ibge/ cópia versionada das bases do IBGE (fallback da API)
 tests/           validação contra o TabNet e regras de privacidade
 docs/            decisões de tratamento e armadilhas dos dados
 ```

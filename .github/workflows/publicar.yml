@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ["site/**", "src/**", "notebooks/**", ".github/workflows/**"]
+    paths: ["site/**", "src/**", "notebooks/**", "referencia/**", ".github/workflows/**"]
 
 permissions:
   contents: read

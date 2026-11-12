@@ -9,6 +9,7 @@ RAIZ = Path(__file__).resolve().parents[2]
 CACHE = RAIZ / "cache"
 RAW = CACHE / "raw"
 PARQUET = CACHE / "parquet"
+REFERENCIA_IBGE = RAIZ / "referencia" / "ibge"  # cópia versionada (fallback da API)
 SITE = RAIZ / "site"
 SITE_DADOS = SITE / "dados"
 ML_SAIDA = SITE / "dados-ia" / "arquivos"
