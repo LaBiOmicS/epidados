@@ -13,7 +13,7 @@ const fs = require('fs');
 
 const base = process.argv[2] || 'http://localhost:8765/';
 const saida = process.argv[3] || 'capturas';
-const paginas = ['index.html', 'casos/zoonoses.html', 'metodologia.html', 'dados-ia/index.html', 'dados-ia/leishmaniose-obito.html'];
+const paginas = ['index.html', 'casos/zoonoses.html', 'metodologia.html', 'dados-ia/index.html', 'dados-ia/leishmaniose-obito.html', 'dados-ia/leishmaniose-analise.html'];
 
 (async () => {
   fs.mkdirSync(saida, { recursive: true });
@@ -32,6 +32,14 @@ const paginas = ['index.html', 'casos/zoonoses.html', 'metodologia.html', 'dados
       const ojs = await page.$$eval('.observablehq--error', els => els.map(e => e.textContent.slice(0, 200)));
       const svgs = await page.$$eval('svg', els => els.length);
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+      // Texto que não cabe na caixa (cortado por overflow: hidden ou nowrap)
+      const cortados = await page.$$eval('.valor, .destaque-numero, .hero h1', els =>
+        els.filter(e => e.scrollWidth > e.clientWidth + 1).map(e => 'cortado: ' + e.textContent.trim().slice(0, 40)));
+      // Gráficos desenhados mais largos que a tela e encolhidos (texto ilegível no celular)
+      const encolhidos = await page.$$eval('svg[viewBox]', els => els
+        .filter(e => e.viewBox.baseVal.width > 200 && e.getBoundingClientRect().width < 0.8 * e.viewBox.baseVal.width)
+        .map(e => `encolhido: ${e.viewBox.baseVal.width}px → ${Math.round(e.getBoundingClientRect().width)}px`));
+      erros.push(...cortados, ...encolhidos);
       const problema = ojs.length || erros.length || overflow > 0;
       falhas += problema ? 1 : 0;
       console.log(`${problema ? '✗' : '✓'} [${largura}] ${p}: svgs=${svgs} erros_ojs=${ojs.length} erros_js=${erros.length} rolagem_x=${overflow}`);

@@ -27,7 +27,7 @@ html`<div class="numeros">
   <div><div class="valor">${(registros / 1e6).toLocaleString("pt-BR", {maximumFractionDigits: 1})} mi</div><div class="rotulo">notificações do SINAN processadas</div></div>
   <div><div class="valor">${Math.min(...anos)}–${Math.max(...anos)}</div><div class="rotulo">anos de série histórica</div></div>
   <div><div class="valor">${Object.keys(meta.agravos).length}</div><div class="rotulo">agravos de notificação</div></div>
-  <div><div class="valor" style="font-size:1.35rem;line-height:1.48">${atualizado}</div><div class="rotulo">última atualização dos dados</div></div>
+  <div><div class="valor data">${atualizado}</div><div class="rotulo">última atualização dos dados</div></div>
 </div>`
 ```
 :::

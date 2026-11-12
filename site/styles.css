@@ -61,12 +61,12 @@ a:hover { text-decoration-thickness: 2px; }
 .btn-lg { padding: .7rem 1.25rem; font-size: 1rem; }
 
 .numeros {
-  display: grid; grid-template-columns: repeat(4, auto); justify-content: space-between;
-  gap: 1.25rem 2rem; margin-top: 2.25rem; padding-top: 1.5rem; border-top: 1px dashed var(--ed-borda);
+  display: flex; flex-wrap: wrap; justify-content: space-between;
+  gap: 1.25rem 1.25rem; margin-top: 2.25rem; padding-top: 1.5rem; border-top: 1px dashed var(--ed-borda);
 }
-.numeros .valor { font-family: "Fraunces", Georgia, serif; font-size: 1.85rem; white-space: nowrap; font-weight: 650; line-height: 1; color: var(--ed-tinta); font-variant-numeric: tabular-nums; }
-@media (max-width: 860px) { .numeros { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-.numeros .rotulo { font-size: .85rem; color: var(--ed-mutado); margin-top: .35rem; }
+.numeros .valor { font-family: "Fraunces", Georgia, serif; font-size: 1.7rem; white-space: nowrap; font-weight: 650; line-height: 1; color: var(--ed-tinta); font-variant-numeric: tabular-nums; }
+.numeros .valor.data { font-size: 1.1rem; line-height: 1.55; }
+.numeros .rotulo { font-size: .85rem; line-height: 1.4; color: var(--ed-mutado); margin-top: .4rem; max-width: 14ch; }
 
 /* Cartões de navegação (portas de entrada, passos) */
 .portas { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 1.25rem; margin: 1.25rem 0 2rem; }
@@ -115,7 +115,7 @@ a:hover { text-decoration-thickness: 2px; }
 .ficha p { margin: 0; }
 
 /* ---------- Cartões de indicadores ---------- */
-.cartoes { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: .9rem; margin: 1.25rem 0 1.5rem; }
+.cartoes { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: .9rem; margin: 1.25rem 0 1.5rem; }
 .cartao {
   padding: 1rem 1.15rem; border-radius: .85rem;
   background: var(--ed-superficie); border: 1px solid var(--ed-borda); box-shadow: var(--ed-sombra);
@@ -172,7 +172,8 @@ figure svg, .observablehq svg { max-width: 100%; height: auto; }
 main table { display: block; max-width: 100%; overflow-x: auto; font-size: .95rem; } /* tabelas largas rolam no celular */
 main table thead th { font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; color: var(--ed-mutado); border-bottom-width: 2px !important; }
 main table tbody tr:hover { background: var(--ed-primaria-suave); }
-td code { word-break: break-all; }
+/* Nomes de variáveis e de arquivos não quebram no meio; a tabela rola se precisar */
+td code, td a[href$=".csv"], td a[href$=".ipynb"], td a[href$=".json"] { white-space: nowrap; word-break: normal; overflow-wrap: normal; }
 
 /* ---------- Código ---------- */
 div.sourceCode { border-radius: .75rem; border: 1px solid var(--ed-borda); background: var(--ed-superficie) !important; }
@@ -185,3 +186,25 @@ code { font-size: .88em; }
 
 /* ---------- Rodapé ---------- */
 .nav-footer { border-top: 1px solid var(--ed-borda); font-size: .85rem; padding: 1.5rem 1rem; }
+
+/* ---------- Celular ---------- */
+@media (max-width: 600px) {
+  .hero { margin-top: .25rem; padding: 1.5rem 1.15rem; border-radius: 1rem; }
+  .hero .hero-lead { font-size: 1.02rem; }
+  .hero .acoes .btn { flex: 1 1 100%; text-align: center; }
+  .numeros { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.1rem 1rem; margin-top: 1.75rem; }
+  .numeros .valor.data { white-space: normal; }
+  .numeros .valor { font-size: 1.3rem; }
+  .numeros .valor.data { font-size: 1.05rem; }
+  .porta { padding: 1.25rem 1.15rem 1.1rem; }
+  .ficha { padding: 1rem 1.1rem; }
+  .lente { padding: 1rem 1rem .9rem 1.1rem; }
+  .limites { padding: 2.9rem 1rem 1rem 1rem; }
+  .limites::before { left: 1rem; top: .9rem; }
+  .cartoes { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .7rem; }
+  .cartao { padding: .85rem .9rem; }
+  .cartao:last-child:nth-child(odd) { grid-column: 1 / -1; }
+  .destaque-numero { font-size: 1.55rem; }
+  main table { font-size: .88rem; }
+  .cell-output-display .observablehq > svg, .cell-output-display .observablehq > figure { padding: .4rem; }
+}

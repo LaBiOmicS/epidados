@@ -28,7 +28,7 @@ html`<div class="cartoes">${[
 | [leishmaniose_obito_mini.csv](arquivos/leishmaniose_obito_mini.csv) | Amostra de 5 mil linhas, estratificada pelo desfecho |
 | [leishmaniose_obito.ipynb](arquivos/leishmaniose_obito.ipynb) | Notebook de linha de base para Jupyter |
 
-[Abrir o notebook no Google Colab](https://colab.research.google.com/github/LaBiOmicS/epidados/blob/main/notebooks/leishmaniose_obito.ipynb){.btn .btn-primary}
+[Ver a análise comentada](leishmaniose-analise.qmd){.btn .btn-primary} [Abrir o notebook no Google Colab](https://colab.research.google.com/github/LaBiOmicS/epidados/blob/main/notebooks/leishmaniose_obito.ipynb){.btn .btn-outline-primary}
 
 ## Ficha técnica
 
@@ -61,7 +61,7 @@ Fichas de investigação de leishmaniose visceral do SINAN (Ministério da Saúd
 
 ```{ojs}
 Plot.plot({
-  height: 360, marginLeft: 170,
+  width: Math.min(width, 860), height: 360, marginLeft: 170,
   x: {label: "% Ignorado", percent: true, grid: true},
   y: {label: null},
   marks: [

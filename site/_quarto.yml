@@ -23,8 +23,14 @@ website:
         menu:
           - href: casos/zoonoses.qmd
             text: "Zoonoses e Saúde Única"
-      - href: dados-ia/index.qmd
-        text: Dados para IA
+      - text: Dados para IA
+        menu:
+          - href: dados-ia/index.qmd
+            text: "Todos os datasets"
+          - href: dados-ia/leishmaniose-obito.qmd
+            text: "Óbito por leishmaniose: ficha técnica"
+          - href: dados-ia/leishmaniose-analise.qmd
+            text: "Óbito por leishmaniose: análise comentada"
       - href: metodologia.qmd
         text: Metodologia
   page-footer:

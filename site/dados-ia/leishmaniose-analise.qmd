@@ -1,0 +1,293 @@
+---
+title: "Análise comentada: óbito por leishmaniose visceral"
+subtitle: "Do primeiro gráfico ao modelo, com os resultados reais do dataset"
+execute:
+  echo: false
+---
+
+Esta página percorre uma análise completa do [dataset de óbito por leishmaniose visceral](leishmaniose-obito.qmd). Todos os números e gráficos são **calculados a partir dos dados publicados** a cada atualização do site, com o mesmo código do notebook (`src/epidados/analise.py`). Use a página como exemplo resolvido em aula ou como gabarito para conferir o trabalho da turma.
+
+```{ojs}
+//| output: false
+a = FileAttachment("arquivos/leishmaniose_obito_analise.json").json()
+fmt = (v, c = 0) => v == null || isNaN(v) ? "–" : v.toLocaleString("pt-BR", {minimumFractionDigits: c, maximumFractionDigits: c})
+pct = (v, c = 1) => fmt(100 * v, c) + "%"
+cor = ({primaria: "#1a8a82", clara: "#9fd3cd", acento: "#d0583f", cinza: "#9aa5a4"})
+estreito = width < 600
+L = Math.min(width, 860)
+// Tabela HTML simples (rola na horizontal no celular, sem altura fixa)
+tabela = (linhas, colunas) => html`<table class="table"><thead><tr>${colunas.map(([, t]) => html`<th>${t}</th>`)}</tr></thead>
+  <tbody>${linhas.map(l => html`<tr>${colunas.map(([k], i) => html`<td style="${i ? "text-align:right" : ""}">${i ? fmt(l[k], 3) : l[k]}</td>`)}</tr>`)}</tbody></table>`
+cartoes = (itens) => html`<div class="cartoes">${itens.map(([rotulo, valor]) =>
+  html`<div class="cartao"><small>${rotulo}</small><div class="destaque-numero">${valor}</div></div>`)}</div>`
+nomes = ({coinfeccao_hiv: "Coinfecção HIV", fenomenos_hemorragicos: "Fenômenos hemorrágicos", ictericia: "Icterícia",
+  edema: "Edema", quadro_infeccioso: "Quadro infeccioso", tipo_entrada: "Tipo de entrada", regiao: "Região",
+  raca_cor: "Raça/cor", sexo: "Sexo", idade: "Idade", emagrecimento: "Emagrecimento",
+  exame_parasitologico: "Exame parasitológico", exame_ifi: "Exame IFI", tosse_diarreia: "Tosse ou diarreia",
+  hepatomegalia: "Hepatomegalia", esplenomegalia: "Esplenomegalia", palidez: "Palidez", febre: "Febre",
+  fraqueza: "Fraqueza", gestante: "Gestante", ano: "Ano"})
+// Ponto com intervalo de confiança de 95% (Wilson)
+pontoIC = (dados, {x = "categoria", rotuloY = "Proporção de óbitos (%)", corPonto = cor.primaria, dominio} = {}) => Plot.plot({
+  width: L, height: 260, marginLeft: 50, marginBottom: 40,
+  x: {label: null, domain: dominio},
+  y: {label: rotuloY, percent: true, grid: true, zero: true},
+  marks: [
+    Plot.ruleY([a.n ? a.obitos / a.n : 0], {stroke: cor.cinza, strokeDasharray: "4,3"}),
+    Plot.ruleX(dados, {x, y1: "ic_inf", y2: "ic_sup", stroke: corPonto, strokeWidth: 2}),
+    Plot.dot(dados, {x, y: "risco", fill: corPonto, r: 5, tip: true,
+      title: d => `${d[x]}\n${pct(d.risco)} de óbitos (IC 95%: ${pct(d.ic_inf)} a ${pct(d.ic_sup)})\n${fmt(d.obitos)} óbitos em ${fmt(d.n)} casos`})
+  ]
+})
+```
+
+```{ojs}
+cartoes([
+  ["Casos analisados", fmt(a.n)],
+  ["Óbitos", `${fmt(a.obitos)} (${pct(a.obitos / a.n)})`],
+  [`Treino (até ${a.ano_corte})`, fmt(a.treino.n)],
+  [`Teste (${a.ano_corte + 1} em diante)`, fmt(a.teste.n)]
+])
+```
+
+## 1. Antes do modelo: olhar os dados
+
+Um modelo só vale a pena depois de entender o desfecho. As barras verticais mostram o **intervalo de confiança de 95%**; a linha tracejada é a proporção geral de óbitos.
+
+### O risco mudou com o tempo?
+
+```{ojs}
+Plot.plot({
+  width: L, height: 240, marginLeft: 50,
+  x: {label: null, tickFormat: d => String(d), ticks: estreito ? d3.range(2007, 2027, 4) : undefined},
+  y: {label: "Proporção de óbitos (%)", percent: true, grid: true, zero: true},
+  marks: [
+    Plot.areaY(a.por_ano, {x: "ano", y1: "ic_inf", y2: "ic_sup", fill: cor.acento, fillOpacity: 0.15}),
+    Plot.lineY(a.por_ano, {x: "ano", y: "risco", stroke: cor.acento, marker: "circle", tip: true,
+      title: d => `${d.ano}: ${pct(d.risco)} (${fmt(d.obitos)} de ${fmt(d.n)})`}),
+    Plot.ruleX([a.ano_corte + 0.5], {stroke: "currentColor", strokeDasharray: "2,3"}),
+    Plot.text([{x: a.ano_corte + 0.5}], {x: "x", frameAnchor: "top", text: () => "treino | teste", dy: 4, fontSize: 11})
+  ]
+})
+```
+
+```{ojs}
+md`A proporção de óbitos passou de **${pct(a.treino.risco)}** no período de treino para **${pct(a.teste.risco)}** no de teste. O modelo vai encontrar no teste um mundo com mais óbitos do que o que aprendeu. Isso se chama **mudança de distribuição** (*dataset shift*), e é a regra, não a exceção, em dados de saúde.`
+```
+
+### Quem morre mais? A idade
+
+```{ojs}
+pontoIC(a.por_idade, {dominio: a.por_idade.map(d => d.categoria)})
+```
+
+```{ojs}
+idade = Object.fromEntries(a.por_idade.map(d => [d.categoria, d]))
+md`O risco tem forma de **U**: é alto em menores de 1 ano (${pct(idade["<1"].risco)}), mínimo entre 5 e 9 anos (${pct(idade["5–9"].risco)}) e máximo a partir dos 60 (${pct(idade["60+"].risco)}). Um modelo linear na idade não consegue representar esse formato sem ajuda (por exemplo, faixas etárias ou um termo quadrático). Modelos de árvore, como o gradient boosting, captam o U sozinhos.`
+```
+
+### Sinais clínicos e "Ignorado"
+
+```{ojs}
+viewof varRisco = Inputs.select(new Map(Object.keys(a.por_variavel).map(k => [nomes[k], k])), {label: "Variável", value: "fenomenos_hemorragicos"})
+pontoIC(a.por_variavel[varRisco], {dominio: ["Sim", "Não", "Ignorado", "Caso novo", "Recidiva", "Transferência"].filter(c => a.por_variavel[varRisco].some(d => d.categoria === c))})
+```
+
+Repare que **"Ignorado" quase nunca fica no meio do caminho** entre "Sim" e "Não". Uma ficha mal preenchida diz algo sobre o atendimento (gravidade, pressa, óbito antes da investigação). Por isso o "Ignorado" é mantido como categoria própria.
+
+### Uma armadilha: HIV e idade
+
+```{ojs}
+hivTotal = Object.fromEntries(a.por_variavel.coinfeccao_hiv.map(d => [d.categoria, d]))
+hivAdulto = Object.fromEntries(a.hiv_adultos.map(d => [d.categoria, d]))
+md`Olhando todos os casos, quem tem coinfecção pelo HIV morre mais: **${pct(hivTotal.Sim.risco)}** contra **${pct(hivTotal["Não"].risco)}**. Mas quase todos os coinfectados são adultos, e adultos morrem mais de qualquer forma. Comparando só adultos (20 anos ou mais), a relação **se inverte**: ${pct(hivAdulto.Sim.risco)} com HIV contra ${pct(hivAdulto["Não"].risco)} sem. O gráfico compara dentro de cada faixa etária.`
+```
+
+```{ojs}
+hivFaixa = a.hiv_por_faixa.filter(d => d.categoria !== "Ignorado" && d.n >= 30)
+Plot.plot({
+  width: L, height: 280, marginLeft: 50, marginBottom: 30,
+  fx: {label: null, domain: a.por_idade.map(d => d.categoria), padding: 0.1},
+  x: {axis: null, domain: ["Não", "Sim"]},
+  y: {label: "Proporção de óbitos (%)", percent: true, grid: true},
+  color: {legend: true, domain: ["Sim", "Não"], range: [cor.acento, cor.primaria], label: "Coinfecção HIV"},
+  marks: [
+    Plot.ruleX(hivFaixa, {fx: "faixa", x: "categoria", y1: "ic_inf", y2: "ic_sup", stroke: "categoria", strokeWidth: 2}),
+    Plot.dot(hivFaixa, {fx: "faixa", x: "categoria", y: "risco", fill: "categoria", r: 5, tip: true,
+      title: d => `${d.faixa}, HIV ${d.categoria}: ${pct(d.risco)} (${fmt(d.obitos)} de ${fmt(d.n)})`})
+  ]
+})
+```
+
+Isso não quer dizer que o HIV "proteja". Há duas explicações a discutir com a turma:
+
+- **Confundimento pela idade**: a comparação bruta mistura o efeito do HIV com o da idade. É um exemplo do **paradoxo de Simpson**.
+- **Viés de seleção**: o dataset só tem **cura** ou **óbito por leishmaniose**. Coinfectados que morreram de **outras causas** (inclusive complicações da aids) foram excluídos. A pergunta "quem morre de leishmaniose?" não é a mesma que "quem morre?".
+
+Faixas com menos de 30 casos coinfectados não aparecem no gráfico.
+
+## 2. Linha de base
+
+Três modelos, treinados com casos até 2019 e avaliados em casos de 2020 em diante. Os dois modelos de verdade usam `class_weight='balanced'`, que dá mais peso aos óbitos durante o treino.
+
+```{ojs}
+tabela(a.modelos, [["modelo", "Modelo"], ["acuracia", "Acurácia"], ["acuracia_balanceada", "Acur. balanceada"],
+  ["auc_roc", "AUC-ROC"], ["auc_pr", "AUC-PR"], ["recall", "Recall"], ["precisao", "Precisão"]])
+```
+
+```{ojs}
+dummy = a.modelos[0]
+gb = a.modelos[2]
+md`O modelo que sempre responde "não morreu" tem a **maior acurácia** (${fmt(dummy.acuracia, 3)}) e não encontra nenhum óbito. O gradient boosting acerta menos no total (${fmt(gb.acuracia, 3)}), mas encontra **${pct(gb.recall, 0)} dos óbitos**. A AUC-PR deve ser comparada com a proporção de óbitos no teste (${fmt(a.teste.risco, 3)}), que é o valor de um modelo sem informação: o gradient boosting fica em ${fmt(gb.auc_pr, 3)}, cerca de ${fmt(gb.auc_pr / a.teste.risco, 1)} vezes esse valor.`
+```
+
+## 3. Como separar treino e teste muda o resultado
+
+O mesmo gradient boosting, avaliado de três formas, com conjuntos de teste do mesmo tamanho:
+
+```{ojs}
+tabela(a.separacao, [["cenario", "Separação"], ["auc_roc", "AUC-ROC"], ["auc_pr", "AUC-PR"], ["recall", "Recall"], ["precisao", "Precisão"]])
+```
+
+```{ojs}
+md`- A separação **aleatória** dá AUC-ROC de ${fmt(a.separacao[0].auc_roc, 3)}, contra ${fmt(a.separacao[1].auc_roc, 3)} na **temporal**. Misturar anos deixa o teste parecido demais com o treino e promete um desempenho que o modelo **não terá** no ano que vem.
+- A AUC-PR vai na direção contrária (${fmt(a.separacao[0].auc_pr, 3)} contra ${fmt(a.separacao[1].auc_pr, 3)}) porque **depende da prevalência**: o teste temporal tem mais óbitos. Não compare AUC-PR entre conjuntos com prevalências diferentes.
+- Incluir \`ano\` como variável não ajuda (AUC-ROC ${fmt(a.separacao[2].auc_roc, 3)}): no teste, todos os anos estão **fora** da faixa vista no treino, e árvores não extrapolam.`
+```
+
+## 4. Curvas ROC e precisão-recall
+
+```{ojs}
+curvas = ["Regressão logística", "Gradient boosting"]
+roc = curvas.flatMap(m => a.roc[m].map(d => ({...d, modelo: m})))
+pr = curvas.flatMap(m => a.pr[m].map(d => ({...d, modelo: m})))
+corModelo = ({legend: true, domain: curvas, range: [cor.cinza, cor.primaria]})
+lado = estreito ? L : Math.min(L / 2 - 10, 420)
+html`<div style="display:flex;flex-wrap:wrap;gap:1rem">${[
+  Plot.plot({width: lado, height: lado, marginLeft: 45, color: corModelo, grid: true,
+    x: {label: "Falsos positivos (1 − especificidade)", domain: [0, 1]}, y: {label: "Recall (sensibilidade)", domain: [0, 1]},
+    marks: [Plot.line([[0, 0], [1, 1]], {stroke: "currentColor", strokeOpacity: 0.3, strokeDasharray: "4,3"}),
+            Plot.line(roc, {x: "fpr", y: "tpr", stroke: "modelo", strokeWidth: 2})]}),
+  Plot.plot({width: lado, height: lado, marginLeft: 45, color: {...corModelo, legend: false}, grid: true,
+    x: {label: "Recall", domain: [0, 1]}, y: {label: "Precisão", domain: [0, 1]},
+    marks: [Plot.ruleY([a.teste.risco], {stroke: "currentColor", strokeOpacity: 0.4, strokeDasharray: "4,3"}),
+            Plot.line(pr, {x: "recall", y: "precisao", stroke: "modelo", strokeWidth: 2})]})
+]}</div>`
+```
+
+A curva ROC parece razoável, mas a curva **precisão-recall** mostra o custo real: para encontrar a maioria dos óbitos, a precisão fica abaixo de 30%. A linha tracejada no gráfico da direita é a proporção de óbitos no teste.
+
+## 5. Escolha o limiar
+
+O modelo devolve uma probabilidade; quem decide a partir de que valor o caso é "alto risco" é você. Mova o controle.
+
+```{ojs}
+viewof limiar = Inputs.range([0.05, 0.95], {step: 0.01, value: 0.5, label: "Limiar"})
+```
+
+```{ojs}
+lim = a.limiares.reduce((m, d) => Math.abs(d.limiar - limiar) < Math.abs(m.limiar - limiar) ? d : m)
+recall = lim.vp / (lim.vp + lim.fn)
+precisao = lim.vp + lim.fp ? lim.vp / (lim.vp + lim.fp) : NaN
+cartoes([
+  ["Óbitos detectados (VP)", fmt(lim.vp)],
+  ["Óbitos perdidos (FN)", fmt(lim.fn)],
+  ["Falsos alarmes (FP)", fmt(lim.fp)],
+  ["Curas corretas (VN)", fmt(lim.vn)]
+])
+```
+
+```{ojs}
+md`Com limiar **${fmt(lim.limiar, 2)}**: recall de **${pct(recall, 0)}**, precisão de **${isNaN(precisao) ? "–" : pct(precisao, 0)}**. ${lim.vp ? `Para cada óbito detectado, há **${fmt(lim.fp / lim.vp, 1)} falsos alarmes**.` : "Nenhum óbito é detectado."} Se o "alarme" fosse uma internação para acompanhamento mais próximo, quantos falsos alarmes o serviço aguentaria para não perder um óbito?`
+```
+
+```{ojs}
+curvaLimiar = a.limiares.flatMap(d => {
+  const r = d.vp / (d.vp + d.fn), p = d.vp + d.fp ? d.vp / (d.vp + d.fp) : null;
+  return [{limiar: d.limiar, metrica: "Recall", valor: r}, {limiar: d.limiar, metrica: "Precisão", valor: p}];
+})
+Plot.plot({
+  width: L, height: 240, marginLeft: 45,
+  x: {label: "Limiar"}, y: {label: null, percent: true, grid: true, domain: [0, 100]},
+  color: {legend: true, domain: ["Recall", "Precisão"], range: [cor.primaria, cor.acento]},
+  marks: [Plot.line(curvaLimiar.filter(d => d.valor != null), {x: "limiar", y: "valor", stroke: "metrica", strokeWidth: 2}),
+          Plot.ruleX([limiar], {stroke: "currentColor", strokeDasharray: "3,3"})]
+})
+```
+
+## 6. As probabilidades são confiáveis?
+
+```{ojs}
+Plot.plot({
+  width: Math.min(L, 520), height: Math.min(L, 520) * 0.8, marginLeft: 50,
+  x: {label: "Probabilidade prevista (média do grupo)", percent: true, domain: [0, 100]},
+  y: {label: "Proporção observada de óbitos (%)", percent: true, domain: [0, 100], grid: true},
+  marks: [Plot.line([[0, 0], [1, 1]], {stroke: "currentColor", strokeOpacity: 0.3, strokeDasharray: "4,3"}),
+          Plot.line(a.calibracao, {x: "previsto", y: "observado", stroke: cor.acento, marker: "circle", tip: true})]
+})
+```
+
+```{ojs}
+md`Cada ponto é um décimo dos casos de teste. Se o modelo fosse **calibrado**, os pontos cairiam na diagonal. A probabilidade média prevista é **${pct(a.prob_media_prevista, 0)}**, mas a proporção real de óbitos é **${pct(a.teste.risco, 0)}**: o \`class_weight='balanced'\` ajuda a encontrar óbitos, mas **infla as probabilidades**. Um modelo assim pode ordenar os pacientes, mas não pode dizer a um familiar "a chance é de 60%". Para isso seria preciso recalibrar (por exemplo, com \`CalibratedClassifierCV\`).`
+```
+
+## 7. O modelo erra mais para algum grupo?
+
+Recall por grupo (proporção dos óbitos que o modelo detecta), com limiar 0,5 e intervalo de confiança de 95%. Grupos com menos de 20 óbitos no teste não aparecem.
+
+```{ojs}
+viewof grupoEq = Inputs.radio(new Map([["Região", "regiao"], ["Raça/cor", "raca_cor"], ["Sexo", "sexo"]]), {label: "Grupo", value: "regiao"})
+Plot.plot({
+  width: L, height: 40 + 44 * a.equidade[grupoEq].length, marginLeft: 110,
+  x: {label: "Recall (óbitos detectados)", percent: true, domain: [0, 100], grid: true},
+  y: {label: null, domain: a.equidade[grupoEq].map(d => d.grupo)},
+  marks: [
+    Plot.ruleX([gb.recall], {stroke: cor.cinza, strokeDasharray: "4,3"}),
+    Plot.ruleY(a.equidade[grupoEq], {y: "grupo", x1: "ic_inf", x2: "ic_sup", stroke: cor.primaria, strokeWidth: 2}),
+    Plot.dot(a.equidade[grupoEq], {y: "grupo", x: "recall", fill: cor.primaria, r: 5, tip: true,
+      title: d => `${d.grupo}: detecta ${fmt(d.recall * d.obitos)} de ${fmt(d.obitos)} óbitos (${pct(d.recall, 0)})\n${fmt(d.alarmes)} alarmes em ${fmt(d.n)} casos`})
+  ]
+})
+```
+
+Os intervalos se sobrepõem bastante, então a maior parte das diferenças pode ser acaso. Quando um grupo se destaca, pergunte se é o grupo em si ou algo associado a ele (idade, região, qualidade do preenchimento da ficha). E lembre que recall igual não garante tratamento justo: compare também os falsos alarmes.
+
+## 8. O que o modelo usou?
+
+Importância por permutação: quanto a AUC-PR do teste cai quando os valores de uma variável são embaralhados (média de 10 repetições; a barra fina é o desvio-padrão).
+
+```{ojs}
+Plot.plot({
+  width: L, height: 40 + 26 * a.importancia.length, marginLeft: estreito ? 130 : 170,
+  x: {label: "Queda na AUC-PR", grid: true},
+  y: {label: null, domain: a.importancia.map(d => nomes[d.variavel] ?? d.variavel)},
+  marks: [
+    Plot.barX(a.importancia, {y: d => nomes[d.variavel] ?? d.variavel, x: "media", fill: cor.primaria, tip: true}),
+    Plot.ruleY(a.importancia, {y: d => nomes[d.variavel] ?? d.variavel, x1: d => d.media - d.dp, x2: d => d.media + d.dp, stroke: "currentColor"}),
+    Plot.ruleX([0])
+  ]
+})
+```
+
+A **idade** domina, seguida de **fenômenos hemorrágicos**, **icterícia** e **edema**, sinais de gravidade conhecidos na leishmaniose visceral. Isso é reconfortante: o modelo aprendeu algo com sentido clínico. Mas importância **não é causa**, e sinais de gravidade podem ter sido registrados quando o paciente já estava piorando. Se a ficha é preenchida depois do desfecho, o modelo pode estar "vendo o futuro" (**vazamento**).
+
+## 9. Conclusões para levar
+
+::: {.limites}
+- **Acurácia engana** quando o desfecho é raro: comece pela prevalência e use recall, precisão e AUC-PR.
+- **Separe pelo tempo.** A separação aleatória superestimou o desempenho.
+- **Limiar é decisão de gestão**, não de algoritmo: depende do custo de um falso alarme e de um óbito perdido.
+- **Probabilidade ordenada não é probabilidade calibrada.**
+- **Associação bruta pode inverter** quando se controla um confundidor (HIV × idade), e a regra de seleção dos casos muda a pergunta.
+- Nada disto é um modelo clínico: os dados são de notificação, com preenchimento desigual e viés de seleção.
+:::
+
+## Reproduza
+
+O mesmo resultado sai do [notebook de linha de base](arquivos/leishmaniose_obito.ipynb) ([abrir no Colab](https://colab.research.google.com/github/LaBiOmicS/epidados/blob/main/notebooks/leishmaniose_obito.ipynb)) ou do código desta página:
+
+```python
+from pathlib import Path
+from epidados import analise  # pip install -e . no repositório
+
+analise.leishmaniose(Path("leishmaniose_obito.csv"), Path("resultado.json"))
+```

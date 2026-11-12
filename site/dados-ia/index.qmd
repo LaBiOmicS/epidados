@@ -17,6 +17,8 @@ Os datasets clássicos de ensino (Iris, Titanic) são limpos demais. Estes vêm 
 |---|---|---|---|
 | [Óbito por leishmaniose visceral](leishmaniose-obito.qmd) | Classificação binária desbalanceada | ~45 mil | Métricas além da acurácia, separação temporal, categorias "Ignorado", interpretação |
 
+Cada dataset tem uma **ficha técnica** e uma **análise comentada** com resultados reais: veja a [análise do óbito por leishmaniose visceral](leishmaniose-analise.qmd) (exploração, confundimento, curvas, escolha do limiar, calibração e equidade).
+
 Em preparação: **baixo peso ao nascer** (SINASC, classificação e regressão) e **dengue semanal por UF** (séries temporais).
 
 ## Como carregar

@@ -96,6 +96,8 @@ def leishmaniose_obito(con) -> dict:
 
 def gerar(con) -> None:
     leishmaniose_obito(con)
+    from . import analise  # usa scikit-learn (grupo dev)
+    analise.gerar(ML_SAIDA)
     # Notebooks de linha de base acompanham os datasets no site
     for nb in (RAIZ / "notebooks").glob("*.ipynb"):
         shutil.copy2(nb, ML_SAIDA / nb.name)

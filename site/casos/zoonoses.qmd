@@ -67,7 +67,14 @@ popPeriodo = (codigo, a0, a1) => {
   return s;
 }
 
-function mapa(valores, {legenda, esquema = "YlOrRd", formato = d => fmt(d, 1), largura = 640} = {}) {
+// Gráficos acompanham a largura da página (`width` é reativo no OJS do Quarto)
+estreito = width < 600
+L = Math.min(width, 860)
+// No celular, um rótulo de ano a cada quatro
+eixoAno = ({label: null, tickFormat: d => String(d), ticks: estreito ? d3.range(2007, 2027, 4) : undefined})
+cortar = (n) => s => estreito && s.length > n ? s.slice(0, n - 1) + "…" : s
+
+function mapa(valores, {legenda, esquema = "YlOrRd", formato = d => fmt(d, 1), largura = Math.min(width, 640)} = {}) {
   const coloridos = malha.features.filter(f => (valores.get(f.properties.codigo) ?? 0) > 0);
   return Plot.plot({
     width: largura,
@@ -115,9 +122,9 @@ Os casos caíram, mas a proporção de pacientes que morrem aumentou. Antes de c
 
 ```{ojs}
 Plot.plot({
-  height: 260, marginLeft: 50,
+  width: L, height: 260, marginLeft: 50,
   y: {label: "Casos confirmados", grid: true, tickFormat: eixo},
-  x: {label: null, tickFormat: d => String(d)},
+  x: eixoAno,
   marks: [
     Plot.barY(lvBr, {x: "ano", y: "casos", fill: d => d.situacao === "final" ? cor.primaria : cor.clara, tip: true}),
     Plot.ruleY([0])
@@ -127,9 +134,9 @@ Plot.plot({
 
 ```{ojs}
 Plot.plot({
-  height: 220, marginLeft: 50,
+  width: L, height: 220, marginLeft: 50,
   y: {label: "Letalidade (%)", grid: true, domain: [0, d3.max(lvBr, d => d.letalidade) * 1.15], tickFormat: eixo},
-  x: {label: null, tickFormat: d => String(d)},
+  x: eixoAno,
   marks: [
     Plot.lineY(lvBr, {x: "ano", y: "letalidade", stroke: cor.acento, marker: "circle", tip: true}),
     Plot.ruleY([0])
@@ -188,9 +195,9 @@ ordemRegioes = ["Nordeste", "Norte", "Sudeste", "Centro-Oeste", "Sul"]
 lvRegiao = d3.rollups(zUf.filter(d => d.agravo === "LEIV"), v => d3.sum(v, d => d.casos), d => d.ano, d => regiaoDaUf.get(d.uf))
   .flatMap(([ano, rs]) => rs.map(([regiao, casos]) => ({ano, regiao, casos})))
 Plot.plot({
-  height: 280, marginLeft: 50,
+  width: L, height: 280, marginLeft: 50,
   y: {label: "Proporção dos casos (%)", percent: true},
-  x: {label: null, tickFormat: d => String(d)},
+  x: eixoAno,
   color: {legend: true, scheme: "Tableau10", domain: ordemRegioes},
   marks: [Plot.barY(lvRegiao, Plot.stackY({offset: "normalize", order: ordemRegioes, x: "ano", y: "casos", fill: "regiao", tip: true}))]
 })
@@ -203,9 +210,9 @@ Troque o perfil e compare o início e o fim da série. Que mudança ajuda a expl
 ```{ojs}
 viewof dimLv = Inputs.select(["Faixa etária", "Coinfecção HIV", "Sexo", "Raça/cor", "Entrada", "Evolução"], {label: "Perfil", value: "Faixa etária"})
 Plot.plot({
-  height: 300, marginLeft: 50,
+  width: L, height: 300, marginLeft: 50,
   y: {label: "Proporção dos casos (%)", percent: true},
-  x: {label: null, tickFormat: d => String(d)},
+  x: eixoAno,
   color: {legend: true, scheme: "Tableau10"},
   marks: [Plot.barY(zPerfil.filter(d => d.agravo === "LEIV" && d.dimensao === dimLv && d.casos != null),
     Plot.stackY({offset: "normalize", x: "ano", y: "casos", fill: "categoria", tip: true}))]
@@ -225,7 +232,7 @@ leptMes = {
     .sort((a, b) => a.data - b.data);
 }
 Plot.plot({
-  height: 260, marginLeft: 50,
+  width: L, height: 260, marginLeft: 50,
   y: {label: "Casos confirmados por mês", grid: true, tickFormat: eixo},
   x: {label: null},
   marks: [Plot.areaY(leptMes, {x: "data", y: "casos", fill: cor.primaria, fillOpacity: 0.25}),
@@ -237,7 +244,7 @@ Plot.plot({
 ```{ojs}
 mesesNome = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"]
 Plot.plot({
-  height: 380, marginLeft: 50, padding: 0.05,
+  width: L, height: 380, marginLeft: 50, padding: 0.05,
   x: {label: null, tickFormat: m => mesesNome[m - 1]},
   y: {label: null, tickFormat: d => String(d)},
   color: {scheme: "YlGnBu", legend: true, label: "Casos"},
@@ -255,9 +262,9 @@ exposicoes = d3.rollups(zPerfil.filter(d => d.agravo === "LEPT" && d.dimensao ==
   v => 100 * d3.sum(v, d => d.casos ?? 0) / d3.sum(v, d => leptTotalAno.get(d.ano)), d => d.categoria)
   .map(([categoria, pct]) => ({categoria, pct}))
 Plot.plot({
-  height: 340, marginLeft: 240,
+  width: L, height: 340, marginLeft: estreito ? 150 : 240,
   x: {label: "% dos casos confirmados (todos os anos)", grid: true},
-  y: {label: null},
+  y: {label: null, tickFormat: cortar(24)},
   marks: [Plot.barX(exposicoes, {y: "categoria", x: "pct", sort: {y: "-x"}, fill: cor.primaria, tip: true}), Plot.ruleX([0])]
 })
 ```
@@ -268,9 +275,9 @@ Plot.plot({
 viewof ufAntr = Inputs.select(["Brasil", ...ufs], {label: "UF", value: "Brasil"})
 antrSerie = antrUf.filter(d => ufAntr === "Brasil" || d.uf === ufAntr)
 Plot.plot({
-  height: 300, marginLeft: 60,
+  width: L, height: 300, marginLeft: 60,
   y: {label: "Atendimentos", grid: true, tickFormat: eixoMil},
-  x: {label: null, tickFormat: d => String(d)},
+  x: eixoAno,
   color: {legend: true, scheme: "Tableau10", domain: ["Cão", "Gato", "Morcego", "Primata (macaco)", "Raposa", "Herbívoro doméstico", "Outro", "Ignorado"]},
   marks: [Plot.barY(antrSerie, Plot.groupX({y: "sum"}, {x: "ano", y: "atendimentos", fill: "especie", tip: true})), Plot.ruleY([0])]
 })
@@ -302,9 +309,9 @@ somarAnos = (dados, campo) => d3.rollups(dados.filter(d => especiesComparar.incl
 condutas = ["Observação do animal", "Observação do animal + vacina", "Vacina", "Soro + vacina", "Esquema de reexposição", "Pré-exposição", "Dispensa de tratamento", "Não informado"]
 condicoes = ["Sadio", "Suspeito", "Raivoso", "Morto ou desaparecido", "Ignorado"]
 Plot.plot({
-  height: 260, marginLeft: 150,
+  width: L, height: 260, marginLeft: estreito ? 110 : 150,
   x: {label: "% dos atendimentos", percent: true},
-  y: {label: null, domain: especiesComparar},
+  y: {label: null, domain: especiesComparar, tickFormat: cortar(16)},
   color: {legend: true, domain: condicoes, range: ["#2e9e4f", "#f0a030", "#b2182b", "#7b6fa8", "#bdbdbd"]},
   marks: [Plot.barX(somarAnos(antrCond, "condicao"),
     Plot.stackX({offset: "normalize", order: condicoes, y: "especie", x: "atendimentos", fill: "categoria", tip: true}))]
@@ -313,9 +320,9 @@ Plot.plot({
 
 ```{ojs}
 Plot.plot({
-  height: 260, marginLeft: 150,
+  width: L, height: 260, marginLeft: estreito ? 110 : 150,
   x: {label: "% dos atendimentos", percent: true},
-  y: {label: null, domain: especiesComparar},
+  y: {label: null, domain: especiesComparar, tickFormat: cortar(16)},
   color: {legend: true, scheme: "Tableau10", domain: condutas},
   marks: [Plot.barX(somarAnos(antrConduta, "conduta"),
     Plot.stackX({offset: "normalize", order: condutas, y: "especie", x: "atendimentos", fill: "categoria", tip: true}))]
