@@ -176,17 +176,119 @@ A estratégia é uma **fatia vertical primeiro**: um caso e um dataset completos
 
 ---
 
-## 8. Situação (2026-11-12)
+## 8. Situação em 2026-11-12
 
-**Fase 0 e Fase 1 concluídas** (fatia vertical):
+### Decisões já tomadas
 
-- Pipeline: SINAN (LEIV, LEPT, ANTR, 2007–2026) + IBGE (municípios, população, malhas)
-- Validação: casos confirmados de LEIV e LEPT **idênticos ao TabNet** em todos os anos (9 testes)
-- Site: estudo de caso Zoonoses (mapas, séries, perfis, lentes por profissão), metodologia, Dados para IA
-- Dataset de IA: óbito por leishmaniose visceral (45 mil casos) + notebook de linha de base
-- Roteiro do professor em PDF (`professor/`, fora do site)
-- Workflow do GitHub Actions pronto (falta o repositório)
+| Decisão | Resultado |
+|---|---|
+| Nome | **EpiDados** (pacote Python `epidados`, comando `uv run epidados`) |
+| Repositório | https://github.com/LaBiOmicS/epidados, **público, com tudo** (inclusive `professor/`) |
+| Site | https://labiomics.github.io/epidados (GitHub Pages via Actions) |
+| MCP | **Adiado.** Os CSVs publicados no Pages já servem de "API" quando for retomado |
+| Licenças | Código MIT; textos e dados CC BY 4.0 (`LICENSE`) |
+
+### Fases 0 e 1 concluídas (fatia vertical)
+
+- **Pipeline** (`src/epidados/`): SINAN (LEIV, LEPT, ANTR, 2007–2026) + IBGE (municípios, população anual, malhas)
+- **Validação**: casos confirmados de LEIV e LEPT **idênticos ao TabNet** em todos os anos; 9 testes em `tests/`
+- **Site**: caso *Zoonoses e Saúde Única* (mapas, séries, perfis, lentes de vet/med/enf/farm), Metodologia, Dados para IA
+- **Dataset de IA**: óbito por leishmaniose visceral (45 mil casos), versão mini, ficha técnica, notebook com botão do Colab
+- **Roteiro do professor**: `professor/gabarito-zoonoses.qmd` → PDF via Typst (`cd professor && uv run quarto render gabarito-zoonoses.qmd`)
+- **Automação**: `.github/workflows/publicar.yml` (todo dia 5, push na `main` e manual)
 
 Mudança de rumo registrada: os dados de 2007–2025 **não** mostram a leishmaniose migrando para o Sudeste. A história real é "menos casos, mais mortes" (casos em adultos e coinfecção por HIV).
 
-Próximo: Fase 2 (SINASC + sífilis, dataset de baixo peso ao nascer).
+Verificar na retomada: se a **primeira execução do workflow** (run 43128906461) publicou o site sem erro.
+
+---
+
+## 9. Como retomar
+
+```bash
+cd /home/dayhoff/workdir/informatics/mcp/vet
+uv sync --all-groups
+uv run epidados                 # usa o cache local; só baixa o que mudou no FTP
+uv run pytest -q
+uv run quarto preview site
+```
+
+Para um agravo novo do SINAN: acrescentar em `config.py` (colunas), `codigos.py` (rótulos), `agregar.py` (saídas) e os totais do TabNet em `tests/test_validacao.py`. O TabNet pode ser consultado por POST em `tabnet.datasus.gov.br/cgi/tabcgi.exe?sinannet/cnv/<def>.def` (ver o histórico da Fase 1).
+
+---
+
+## 10. Próximas fases (detalhadas)
+
+### Antes da Fase 2: preparar o pipeline para volumes grandes
+
+As próximas bases são muito maiores que as da Fase 1 (medido no FTP em 2026-11-12):
+
+| Base | Tamanho (.dbc) | Observação |
+|---|---|---|
+| SINAN dengue (DENG) | ~1,1 GB | 2024 tem milhões de registros |
+| SINASC (DNRES, todas as UFs e anos) | ~6,6 GB | 1 arquivo por UF e ano; SP ≈ 25 MB/ano |
+| SINAN violência (VIOL) | ~330 MB | Só agregados, nunca individual |
+| SINAN intoxicação (IEXO) | ~210 MB | |
+| CNES (PF, profissionais) | grande | 1 arquivo por UF e **mês**; usar uma competência por ano |
+
+O `dbfread` converte cerca de 12 mil linhas/s: a dengue sozinha levaria mais de uma hora. Tarefas:
+
+1. **Leitor de DBF rápido**: DBF tem registros de largura fixa; ler com `numpy.frombuffer` só as colunas necessárias (meta: 10× mais rápido). Manter `dbfread` como referência nos testes.
+2. **Cache do Actions**: o pipeline já pula arquivos convertidos pelo `.meta` sem baixar de novo, então guardar só `cache/parquet` e `cache/raw/ibge` no cache (limite de 10 GB por repositório).
+3. **Conversão em paralelo** (vários arquivos ao mesmo tempo; o runner tem 4 núcleos).
+4. **Medir** o tempo total no Actions; o `timeout-minutes: 180` pode precisar subir ou a primeira carga ser feita por partes.
+
+### Fase 2: Saúde materno-infantil
+
+- **Dados**: SINASC (`SINASC/1996_/Dados/DNRES/DN<UF><ANO>.dbc`), SINAN sífilis em gestante (SIFG) e congênita (SIFC), SIM (óbitos infantis, se couber).
+- **Atenção**: SIFG, SIFC e SIFA só existem como **preliminares** no FTP (nenhum ano final). O site deve deixar isso explícito.
+- **Caso 1, Sífilis congênita**: lentes de Med, Farm, Enf, Odonto. Ganchos: falhas de pré-natal, desabastecimento de penicilina benzatina em meados dos anos 2010 (confirmar datas em fonte oficial antes de afirmar), manifestações orais.
+- **Datasets de IA**: baixo peso ao nascer (classificação) e peso ao nascer (regressão). Armadilha didática: semanas de gestação "entregam" a resposta (vazamento).
+- **Validação**: nascidos vivos por UF e ano contra o TabNet do SINASC.
+
+### Fase 3: Demais casos
+
+- **Caso 2, Intoxicações** (IEXO + SIM): Vet, Med, Farm, Enf. Agentes (medicamentos, agrotóxicos, raticidas), circunstância, evolução.
+- **Caso 3, Acidentes com material biológico** (ACBI + CNES): Med, Farm, Enf, Odonto. Categoria profissional exposta, tipo de exposição, profilaxia.
+- **Caso 5, Violência** (VIOL + SIM): Med, Enf, Odonto. **Somente agregados**; revisar com cuidado ético.
+- **Módulo transversal CNES**: profissionais do SUS por categoria e município ("Onde estão os profissionais?").
+- **Dataset de IA**: dengue semanal por UF (séries temporais).
+- **Odontologia** ainda não tem lente no caso de zoonoses: ela entra nos casos 1, 3 e 5.
+
+### Fase 4: Acabamento e publicação
+
+- Revisão das lentes por um docente de cada área
+- Publicar os datasets no **OpenML** (`openml-python`; exige chave de API da conta)
+- Ligar o repositório ao **Zenodo** e criar a release v1.0 (DOI)
+- Página "Como usar em aula" e "Como citar" com o DOI
+- Testar o notebook no Colab de verdade (pandas 2.x)
+
+### Fase 5: Piloto e artigos
+
+- Uso em uma disciplina de saúde e uma de dados/IA
+- **CEP antes** de qualquer coleta de avaliação com alunos
+- Artigos: data paper (datasets) e relato de experiência (ensino)
+
+### Depois: MCP
+
+Retomar quando o site estiver estável. O MCP leria os CSVs publicados em `labiomics.github.io/epidados/dados/`.
+
+---
+
+## 11. Pendências técnicas conhecidas
+
+- O SIM ainda não é usado (o plano original previa óbitos do SIM no caso de zoonoses; hoje a letalidade vem da evolução no SINAN).
+- O arquivo `ESPOBR` do SINAN continua sem identificação (talvez esporotricose).
+- A página de zoonoses carrega cerca de 10 MB de dados (malha municipal de 3 MB + CSVs). Avaliar TopoJSON e arquivos por agravo se ficar lenta.
+- Armadilhas do site, já resolvidas, que voltarão nos novos casos:
+  - `${...}` em texto ou HTML do Quarto vira fórmula matemática: usar células `{ojs}` com `md` ou `html`;
+  - malhas do IBGE precisam de reorientação dos polígonos para o d3 (`ibge._orientar_para_d3`);
+  - no pandas 3, colunas de texto não são `object`: usar `select_dtypes(exclude="number")`;
+  - antes de publicar, verificar as páginas com `scripts/verificar_site.js` (instruções no cabeçalho do arquivo). Neste computador há um Chromium em `~/.cache/ms-playwright/chromium_headless_shell-1254/`.
+
+## 12. Decisões ainda pendentes
+
+1. Disciplina(s) do piloto
+2. Docentes revisores por área
+3. Coautores e afiliação (Zenodo e artigos)
+4. Se o roteiro do professor continua público (hoje está no repositório, por decisão de 2026-11-12)
