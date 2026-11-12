@@ -1,107 +1,382 @@
 ---
 pagetitle: "EpiDados · Dados reais do SUS para ensinar"
 description: "Dados reais do DATASUS para ensinar saúde, epidemiologia e ciência de dados"
+page-layout: custom
 toc: false
+include-after-body: tema/animacoes.html
 execute:
   echo: false
 ---
 
-::: {.hero}
-[Material didático aberto · DATASUS + IBGE]{.sobretitulo}
+```{ojs}
+//| output: false
+meta = FileAttachment("dados/metadados.json").json()
+zUf = FileAttachment("dados/zoonoses_uf_ano.csv").csv({typed: true})
+zMes = FileAttachment("dados/zoonoses_uf_mes.csv").csv({typed: true})
+antrUf = FileAttachment("dados/antr_uf_ano_especie.csv").csv({typed: true})
+popUf = FileAttachment("dados/populacao_uf_ano.csv").csv({typed: true})
+malhaUF = FileAttachment("dados/malha_uf.geojson").json()
 
-# Dados reais do SUS para *ensinar* saúde e ciência de dados {.hero-titulo .unnumbered .unlisted}
+fmt = (v, c = 0) => v == null || isNaN(v) ? "–" : v.toLocaleString("pt-BR", {minimumFractionDigits: c, maximumFractionDigits: c})
+cor = ({primaria: "#1a8a82", clara: "#9fd3cd", acento: "#d0583f", ouro: "#e9b949"})
+mesesLongo = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"]
+mesesNome = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"]
+ufs = [...new Set(popUf.map(d => d.uf))].sort()
+nomeUf = new Map(popUf.map(d => [d.uf, d.uf_nome]))
+// Códigos IBGE das UFs (a malha traz só o código)
+siglaUf = ({11: "RO", 12: "AC", 13: "AM", 14: "RR", 15: "PA", 16: "AP", 17: "TO", 21: "MA", 22: "PI", 23: "CE", 24: "RN", 25: "PB",
+  26: "PE", 27: "AL", 28: "SE", 29: "BA", 31: "MG", 32: "ES", 33: "RJ", 35: "SP", 41: "PR", 42: "SC", 43: "RS", 50: "MS", 51: "MT", 52: "GO", 53: "DF"})
+popAno = d3.rollup(popUf, v => d3.sum(v, d => d.pop), d => d.uf, d => d.ano)
+popBr = d3.rollup(popUf, v => d3.sum(v, d => d.pop), d => d.ano)
 
-[Este site transforma dados públicos do **DATASUS** em material de aula. Os dados vêm do Sistema de Informação de Agravos de Notificação (SINAN), são atualizados todo mês e acompanham as armadilhas que quem trabalha com dados de saúde precisa aprender a reconhecer.]{.hero-lead}
+// Série anual de um agravo (LEIV, LEPT ou ANTR) para o Brasil ou uma UF
+serie = (agravo, uf) => {
+  const linhas = agravo === "ANTR"
+    ? antrUf.filter(d => uf === "Brasil" || d.uf === uf).map(d => ({ano: d.ano, situacao: d.situacao, casos: d.atendimentos, obitos: 0}))
+    : zUf.filter(d => d.agravo === agravo && (uf === "Brasil" || d.uf === uf));
+  return d3.rollups(linhas, v => ({casos: d3.sum(v, d => d.casos), obitos: d3.sum(v, d => d.obitos ?? 0), situacao: v[0].situacao}), d => d.ano)
+    .map(([ano, v]) => {
+      const pop = uf === "Brasil" ? popBr.get(ano) : popAno.get(uf)?.get(ano);
+      return {ano, ...v, incidencia: pop ? 1e5 * v.casos / pop : NaN, letalidade: v.casos ? 100 * v.obitos / v.casos : NaN};
+    }).sort((a, b) => a.ano - b.ano);
+}
+finais = s => s.filter(d => d.situacao === "final")
+```
 
-::: {.acoes}
-[[]{.bi .bi-map} Estudos de caso](casos/zoonoses.qmd){.btn .btn-primary .btn-lg}
-[[]{.bi .bi-cpu} Dados para IA](dados-ia/index.qmd){.btn .btn-outline-primary .btn-lg}
+::: {.op-hero}
+::: {.op-hero-grade}
+::: {.op-hero-texto}
+[Material didático aberto · SINAN/DATASUS + IBGE]{.op-selo}
+
+# Aprenda saúde e ciência de dados com dados *reais* do SUS {.op-titulo .unnumbered .unlisted}
+
+[Milhões de notificações do Sistema de Informação de Agravos de Notificação viram mapas, gráficos, desafios e datasets para aulas de veterinária, medicina, enfermagem, farmácia e ciência de dados.]{.op-lead}
+
+::: {.op-acoes}
+[Explorar os dados ↓](#explore){.btn .btn-lg .op-btn-claro}
+[[]{.bi .bi-map} Estudo de caso](casos/zoonoses.qmd){.btn .btn-lg .op-btn-contorno}
+[[]{.bi .bi-cpu} Dados para IA](dados-ia/index.qmd){.btn .btn-lg .op-btn-contorno}
 :::
 
 ```{ojs}
-meta = FileAttachment("dados/metadados.json").json()
 registros = Object.values(meta.agravos).flatMap(a => a.anos).reduce((s, a) => s + a.registros, 0)
-anos = Object.values(meta.agravos).flatMap(a => a.anos.map(d => d.ano))
-atualizado = new Date(meta.gerado_em).toLocaleDateString("pt-BR", {month: "long", year: "numeric"})
-html`<div class="numeros">
-  <div><div class="valor">${(registros / 1e6).toLocaleString("pt-BR", {maximumFractionDigits: 1})} mi</div><div class="rotulo">notificações do SINAN processadas</div></div>
-  <div><div class="valor">${Math.min(...anos)}–${Math.max(...anos)}</div><div class="rotulo">anos de série histórica</div></div>
-  <div><div class="valor">${Object.keys(meta.agravos).length}</div><div class="rotulo">agravos de notificação</div></div>
-  <div><div class="valor data">${atualizado}</div><div class="rotulo">última atualização dos dados</div></div>
+anosMeta = Object.values(meta.agravos).flatMap(a => a.anos.map(d => d.ano))
+html`<div class="op-contadores">
+  <div><span class="op-num" data-contar="${registros / 1e6}" data-casas="1" data-sufixo=" mi">0</span><span>notificações processadas</span></div>
+  <div><span class="op-num" data-contar="${Math.max(...anosMeta) - Math.min(...anosMeta) + 1}" data-sufixo=" anos">0</span><span>de série histórica</span></div>
+  <div><span class="op-num" data-contar="5570">0</span><span>municípios no mapa</span></div>
 </div>`
 ```
 :::
 
-## Duas portas de entrada
+::: {.op-hero-mapa}
+```{ojs}
+lvUfAno = zUf.filter(d => d.agravo === "LEIV" && d.situacao === "final")
+anosLv = [...new Set(lvUfAno.map(d => d.ano))].sort()
+maxInc = d3.quantile(lvUfAno.map(d => d.incidencia_100mil), 0.97)
+viewof anoMapa = {
+  const anos = anosLv;
+  const el = html`<div class="op-scrubber">
+    <button type="button" aria-label="Pausar animação">❚❚</button>
+    <input type="range" min="0" max="${anos.length - 1}" step="1" value="0" aria-label="Ano do mapa">
+  </div>`;
+  const [btn, input] = [el.querySelector("button"), el.querySelector("input")];
+  let timer = null;
+  const definir = i => { input.value = i; el.value = anos[i]; el.dispatchEvent(new CustomEvent("input")); };
+  const pausar = () => { clearInterval(timer); timer = null; btn.textContent = "▶"; btn.setAttribute("aria-label", "Animar o mapa"); };
+  const tocar = () => { timer = setInterval(() => definir((+input.value + 1) % anos.length), 1100); btn.textContent = "❚❚"; btn.setAttribute("aria-label", "Pausar animação"); };
+  btn.onclick = () => timer ? pausar() : tocar();
+  input.oninput = e => { e.stopPropagation(); pausar(); definir(+input.value); };
+  invalidation.then(pausar);
+  el.value = anos[0];
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) { input.value = anos.length - 1; el.value = anos.at(-1); btn.textContent = "▶"; }
+  else tocar();
+  return el;
+}
+```
+
+```{ojs}
+{
+  const doAno = new Map(lvUfAno.filter(d => d.ano === anoMapa).map(d => [d.uf, d]));
+  const total = d3.sum(doAno.values(), d => d.casos);
+  const lado = Math.min(500, width - 48);
+  const mapa = Plot.plot({
+    width: lado, height: lado * 0.98, margin: 4,
+    projection: {type: "mercator", domain: malhaUF},
+    color: {type: "sqrt", domain: [0, maxInc], clamp: true, range: ["#1f4f4b", "#f2c14e", "#e8553f"], interpolate: "rgb"},
+    marks: [
+      Plot.geo(malhaUF, {
+        fill: f => doAno.get(siglaUf[+f.properties.codigo])?.incidencia_100mil ?? 0,
+        stroke: "#0b2624", strokeWidth: 0.8, tip: true,
+        title: f => { const d = doAno.get(siglaUf[+f.properties.codigo]); return d ? `${nomeUf.get(d.uf)}\n${fmt(d.casos)} casos · ${fmt(d.incidencia_100mil, 1)} por 100 mil` : ""; }
+      })
+    ]
+  });
+  return html`<figure class="op-mapa">
+    <div class="op-mapa-ano">${anoMapa}</div>
+    <div class="op-mapa-legenda">Leishmaniose visceral · casos confirmados por 100 mil habitantes, por UF<br><strong>${fmt(total)}</strong> casos no Brasil</div>
+    ${mapa}
+    <div class="op-escala"><span>menos</span><i></i><span>mais</span></div>
+  </figure>`;
+}
+```
+:::
+:::
+:::
+
+::: {.op-secao}
+::: {.op-conteudo}
+[O que os dados contam]{.op-rotulo}
+
+## Três histórias escondidas nas notificações {.op-h2 .unnumbered}
+
+```{ojs}
+lvBr = finais(serie("LEIV", "Brasil"))
+leptMes = d3.rollups(zMes.filter(d => d.agravo === "LEPT"), v => d3.sum(v, d => d.casos), d => d.mes).map(([mes, casos]) => ({mes, casos})).sort((a, b) => a.mes - b.mes)
+picoLept = d3.greatest(leptMes, d => d.casos)
+valeLept = d3.least(leptMes, d => d.casos)
+antrBr = finais(serie("ANTR", "Brasil"))
+antrUltimo = antrBr.at(-1)
+caoUltimo = d3.sum(antrUf.filter(d => d.ano === antrUltimo.ano && d.especie === "Cão"), d => d.atendimentos)
+mini = (dados, opcoes) => Plot.plot({width: 300, height: 90, margin: 6, marginBottom: 18, x: {label: null, ticks: [], ...opcoes.x}, y: {axis: null, zero: true}, marks: opcoes.marks(dados)})
+html`<div class="op-fatos">
+  <article class="op-fato revelar">
+    <div class="op-fato-tag">Leishmaniose visceral</div>
+    <div class="op-fato-num"><span data-contar="${lvBr[0].letalidade}" data-casas="1" data-sufixo="%">0</span> → <span data-contar="${lvBr.at(-1).letalidade}" data-casas="1" data-sufixo="%">0</span></div>
+    <p>Letalidade entre ${lvBr[0].ano} e ${lvBr.at(-1).ano}. Os casos caíram, mas morre uma proporção maior dos doentes.</p>
+    <div class="desenhar">${mini(lvBr, {marks: d => [Plot.lineY(d, {x: "ano", y: "letalidade", stroke: cor.acento, strokeWidth: 2.5, curve: "monotone-x"})]})}</div>
+  </article>
+  <article class="op-fato revelar">
+    <div class="op-fato-tag">Leptospirose</div>
+    <div class="op-fato-num"><span data-contar="${picoLept.casos / valeLept.casos}" data-casas="1" data-sufixo="×">0</span></div>
+    <p>Em ${mesesLongo[picoLept.mes - 1]}, época de chuvas, há ${fmt(picoLept.casos / valeLept.casos, 1)} vezes mais casos do que em ${mesesLongo[valeLept.mes - 1]}. Enchente e rato andam juntos.</p>
+    <div class="desenhar">${mini(leptMes, {x: {type: "band"}, marks: d => [Plot.barY(d, {x: "mes", y: "casos", fill: m => m.mes === picoLept.mes ? cor.primaria : cor.clara})]})}</div>
+  </article>
+  <article class="op-fato revelar">
+    <div class="op-fato-tag">Atendimento antirrábico</div>
+    <div class="op-fato-num"><span data-contar="${antrUltimo.casos / 1000}" data-casas="0" data-sufixo=" mil">0</span></div>
+    <p>Pessoas agredidas por animais que procuraram o SUS em ${antrUltimo.ano}. Em ${fmt(100 * caoUltimo / antrUltimo.casos, 0)}% dos casos, o agressor foi um cão.</p>
+    <div class="desenhar">${mini(antrBr, {marks: d => [Plot.areaY(d, {x: "ano", y: "casos", fill: cor.primaria, fillOpacity: 0.2, curve: "monotone-x"}), Plot.lineY(d, {x: "ano", y: "casos", stroke: cor.primaria, strokeWidth: 2.5, curve: "monotone-x"})]})}</div>
+  </article>
+</div>`
+```
+:::
+:::
+
+::: {.op-secao .op-escura}
+::: {.op-conteudo}
+[Desafio]{.op-rotulo}
+
+## Dê seu palpite antes de ver o dado {.op-h2 .unnumbered}
+
+[Quem trabalha com dados aprende a desconfiar da própria intuição. Responda primeiro; o gráfico aparece depois.]{.op-sub}
+
+```{ojs}
+//| output: false
+// Botões de palpite: o valor fica nulo até a primeira escolha
+palpite = (opcoes) => {
+  const el = html`<div class="op-opcoes">${opcoes.map(o => html`<button type="button" class="op-opcao" data-v="${o}">${o}</button>`)}</div>`;
+  el.value = null;
+  el.querySelectorAll("button").forEach(b => b.onclick = () => {
+    el.querySelectorAll("button").forEach(x => x.classList.toggle("escolhida", x === b));
+    el.value = b.dataset.v; el.dispatchEvent(new CustomEvent("input"));
+  });
+  return el;
+}
+resposta = (certo, texto, grafico) => html`<div class="op-resposta ${certo ? "certo" : "errado"}">
+  <div class="op-veredito">${certo ? "✓ Isso mesmo." : "✗ Não foi o que os dados mostraram."}</div>
+  <p>${texto}</p><div class="desenhar">${grafico}</div></div>`
+// Largura do cartão: 3 colunas a partir de 960 px, uma coluna abaixo disso
+largDesafio = width >= 960 ? Math.floor((Math.min(width, 1140) - 48 - 2 * 20) / 3) - 50 : Math.min(440, width - 70)
+aguardando = html`<div class="op-aguardando">Escolha uma resposta para revelar o gráfico.</div>`
+```
+
+::: {.op-desafios}
+::: {.op-desafio}
+[1]{.op-desafio-n}
+
+**Entre 2007 e 2025, o número de casos de leishmaniose visceral no Brasil…**
+
+```{ojs}
+viewof p1 = palpite(["aumentou", "ficou estável", "diminuiu"])
+```
+
+```{ojs}
+p1 === null ? aguardando : resposta(p1 === "diminuiu",
+  html`Os casos confirmados passaram de <strong>${fmt(lvBr[0].casos)}</strong> em ${lvBr[0].ano} para <strong>${fmt(lvBr.at(-1).casos)}</strong> em ${lvBr.at(-1).ano}. Menos casos não significa doença mais branda: a letalidade subiu no mesmo período.`,
+  Plot.plot({width: largDesafio, height: 170, marginLeft: 44, y: {grid: true, label: "casos", tickFormat: d => fmt(d)}, x: {label: null, tickFormat: d => String(d), ticks: d3.range(2007, 2027, 6)},
+    marks: [Plot.barY(lvBr, {x: "ano", y: "casos", fill: cor.ouro, tip: true}), Plot.ruleY([0])]}))
+```
+:::
+
+::: {.op-desafio}
+[2]{.op-desafio-n}
+
+**Em que época do ano há mais casos de leptospirose no Brasil?**
+
+```{ojs}
+viewof p2 = palpite(["jan–mar", "abr–jun", "jul–set", "out–dez"])
+```
+
+```{ojs}
+trimestre = m => ["jan–mar", "abr–jun", "jul–set", "out–dez"][Math.floor((m - 1) / 3)]
+p2 === null ? aguardando : resposta(p2 === trimestre(picoLept.mes),
+  html`O pico é em <strong>${mesesLongo[picoLept.mes - 1]}</strong>, no fim do verão chuvoso. A bactéria sai da urina dos roedores e chega às pessoas pela água das enchentes.`,
+  Plot.plot({width: largDesafio, height: 170, marginLeft: 44, y: {grid: true, label: "casos", tickFormat: d => fmt(d)}, x: {label: null, tickFormat: m => largDesafio < 360 ? mesesNome[m - 1][0].toUpperCase() : mesesNome[m - 1]},
+    marks: [Plot.barY(leptMes, {x: "mes", y: "casos", fill: d => trimestre(d.mes) === p2 ? cor.ouro : cor.clara, tip: true}), Plot.ruleY([0])]}))
+```
+:::
+
+::: {.op-desafio}
+[3]{.op-desafio-n}
+
+**Depois do cão, que animal mais leva pessoas ao atendimento antirrábico?**
+
+```{ojs}
+viewof p3 = palpite(["Gato", "Morcego", "Macaco", "Cavalo ou boi"])
+```
+
+```{ojs}
+especies = d3.rollups(antrUf.filter(d => !["Ignorado", "Outro"].includes(d.especie)), v => d3.sum(v, d => d.atendimentos), d => d.especie)
+  .map(([especie, n]) => ({especie, n})).sort((a, b) => b.n - a.n)
+segundo = especies[1].especie
+rotuloP3 = ({"Gato": "Gato", "Morcego": "Morcego", "Macaco": "Primata (macaco)", "Cavalo ou boi": "Herbívoro doméstico"})
+p3 === null ? aguardando : resposta(rotuloP3[p3] === segundo,
+  html`É o <strong>${segundo.toLowerCase()}</strong>. Mas repare no morcego: são poucos atendimentos, e a maioria recebe soro além da vacina, porque toda mordida de morcego é tratada como exposição grave à raiva.`,
+  Plot.plot({width: largDesafio, height: 190, marginLeft: 130, x: {label: "atendimentos (todos os anos)", grid: true, tickFormat: d => fmt(d / 1e6, 1) + " mi"}, y: {label: null, domain: especies.map(d => d.especie)},
+    marks: [Plot.barX(especies, {y: "especie", x: "n", fill: d => d.especie === rotuloP3[p3] ? cor.ouro : cor.clara, tip: true}), Plot.ruleX([0])]}))
+```
+:::
+:::
+:::
+:::
+
+::: {#explore .op-secao}
+::: {.op-conteudo}
+[Explore]{.op-rotulo}
+
+## Seu primeiro painel epidemiológico {.op-h2 .unnumbered}
+
+[Escolha um agravo e um lugar. Compare estados, procure tendências, desconfie dos picos.]{.op-sub}
+
+::: {.op-painel}
+```{ojs}
+viewof agravoP = Inputs.radio(new Map([["Leishmaniose visceral", "LEIV"], ["Leptospirose", "LEPT"], ["Atendimento antirrábico", "ANTR"]]), {value: "LEPT"})
+viewof ufP = Inputs.select(new Map([["Brasil", "Brasil"], ...ufs.map(u => [`${nomeUf.get(u)} (${u})`, u])]), {value: "Brasil", label: "Local"})
+```
+
+```{ojs}
+sP = serie(agravoP, ufP)
+sF = finais(sP)
+ultimo = sF.at(-1)
+primeiro = sF[0]
+variacao = 100 * (ultimo.incidencia / primeiro.incidencia - 1)
+rotuloCasos = agravoP === "ANTR" ? "Atendimentos" : "Casos confirmados"
+html`<div class="op-kpis">
+  <div class="op-kpi"><small>${rotuloCasos} em ${ultimo.ano}</small><strong>${fmt(ultimo.casos)}</strong></div>
+  <div class="op-kpi"><small>Por 100 mil habitantes</small><strong>${fmt(ultimo.incidencia, 1)}</strong></div>
+  <div class="op-kpi"><small>Variação desde ${primeiro.ano}</small><strong class="${variacao > 0 ? "sobe" : "desce"}">${variacao > 0 ? "▲" : "▼"} ${fmt(Math.abs(variacao), 0)}%</strong></div>
+  ${agravoP === "ANTR" ? html`<div class="op-kpi"><small>Ano de pico</small><strong>${d3.greatest(sF, d => d.casos).ano}</strong></div>`
+    : html`<div class="op-kpi"><small>Letalidade em ${ultimo.ano}</small><strong>${fmt(ultimo.letalidade, 1)}%</strong></div>`}
+</div>`
+```
+
+```{ojs}
+larguraPainel = Math.min(width - 48, 1080)
+html`<div class="op-graficos">
+  <div class="op-grafico"><h4>${rotuloCasos} por ano</h4>${Plot.plot({
+    width: larguraPainel < 760 ? larguraPainel - 8 : larguraPainel * 0.58, height: 230, marginLeft: 50,
+    x: {label: null, tickFormat: d => String(d), ticks: larguraPainel < 560 ? d3.range(2007, 2027, 4) : undefined},
+    y: {label: null, grid: true, tickFormat: d => fmt(d)},
+    marks: [Plot.barY(sP, {x: "ano", y: "casos", fill: d => d.situacao === "final" ? cor.primaria : cor.clara, tip: true,
+      title: d => `${d.ano}${d.situacao === "final" ? "" : " (preliminar)"}\n${fmt(d.casos)} · ${fmt(d.incidencia, 1)} por 100 mil`}), Plot.ruleY([0])]
+  })}<p class="op-nota">Barras claras: anos preliminares, ainda em revisão.</p></div>
+  <div class="op-grafico">${agravoP === "ANTR"
+    ? html`<h4>Animal agressor (todos os anos)</h4>${(() => {
+        const e = d3.rollups(antrUf.filter(d => ufP === "Brasil" || d.uf === ufP), v => d3.sum(v, d => d.atendimentos), d => d.especie).map(([especie, n]) => ({especie, n})).sort((a, b) => b.n - a.n);
+        return Plot.plot({width: larguraPainel < 760 ? larguraPainel - 8 : larguraPainel * 0.36, height: 230, marginLeft: 130,
+          x: {label: null, percent: false, grid: true, tickFormat: d => fmt(100 * d, 0) + "%"}, y: {label: null, domain: e.map(d => d.especie)},
+          marks: [Plot.barX(e, {y: "especie", x: d => d.n / d3.sum(e, x => x.n), fill: cor.primaria, tip: true}), Plot.ruleX([0])]});
+      })()}`
+    : html`<h4>Mês dos primeiros sintomas</h4>${(() => {
+        const m = d3.rollups(zMes.filter(d => d.agravo === agravoP && (ufP === "Brasil" || d.uf === ufP)), v => d3.sum(v, d => d.casos), d => d.mes).map(([mes, casos]) => ({mes, casos}));
+        return Plot.plot({width: larguraPainel < 760 ? larguraPainel - 8 : larguraPainel * 0.36, height: 230, marginLeft: 44,
+          x: {label: null, tickFormat: k => mesesNome[k - 1], domain: d3.range(1, 13)}, y: {label: null, grid: true, tickFormat: d => fmt(d)},
+          marks: [Plot.barY(m, {x: "mes", y: "casos", fill: cor.acento, tip: true}), Plot.ruleY([0])]});
+      })()}`}</div>
+</div>`
+```
+
+```{ojs}
+md`**Para pensar:** ${agravoP === "LEIV" ? "compare o Maranhão e o Tocantins com São Paulo. A incidência muda de escala: o que um mapa de casos absolutos esconderia?" : agravoP === "LEPT" ? "escolha o Rio Grande do Sul e procure o ano das grandes enchentes. O pico aparece em que mês?" : "por que o número de atendimentos cresce quase todo ano se a raiva humana é rara? O que isso diz sobre o serviço, e não sobre a doença?"}`
+```
+:::
+
+[Ver o estudo de caso completo, com mapas por município →](casos/zoonoses.qmd){.op-link}
+:::
+:::
+
+::: {.op-secao}
+::: {.op-conteudo}
+[Para aula]{.op-rotulo}
+
+## Escolha por onde começar {.op-h2 .unnumbered}
 
 ::: {.portas}
-::: {.porta}
+::: {.porta .revelar}
 []{.icone .bi .bi-people}
 
-### Estudos de caso
+### Estudo de caso
 
-Problemas reais de saúde vistos por várias profissões: veterinária, medicina, farmácia, enfermagem e odontologia. Cada caso traz mapa, séries históricas, perguntas por profissão e um quadro com os limites do dado.
+*Zoonoses e Saúde Única*: leishmaniose visceral, leptospirose e agressões por animais, com mapas, séries históricas, perguntas por profissão e um quadro com os limites do dado.
 
-[Zoonoses e Saúde Única →](casos/zoonoses.qmd)
+[Abrir o caso →](casos/zoonoses.qmd)
 :::
 
-::: {.porta .acento}
+::: {.porta .acento .revelar}
 []{.icone .bi .bi-diagram-3}
 
-### Dados para IA
+### Dataset para machine learning
 
-Datasets prontos para scikit-learn, com ficha técnica, notebook de linha de base e problemas reais preservados: desbalanceamento, valores ignorados e vazamento de dados.
+*Óbito por leishmaniose visceral*: 45 mil casos para classificação, com ficha técnica, notebook para o Colab e problemas reais preservados.
 
-[Ver datasets →](dados-ia/index.qmd)
+[Ver a ficha técnica →](dados-ia/leishmaniose-obito.qmd)
+:::
+
+::: {.porta .revelar}
+[]{.icone .bi .bi-graph-up-arrow}
+
+### Análise comentada
+
+Do primeiro gráfico ao modelo: confundimento, separação temporal, curvas, escolha do limiar, calibração e equidade, com os resultados reais.
+
+[Ler a análise →](dados-ia/leishmaniose-analise.qmd)
 :::
 :::
-
-## Como usar em aula
 
 ::: {.passos}
-::: {.passo}
+::: {.passo .revelar}
 **Antes da aula**
 
-O professor escolhe um estudo de caso e a lente da sua profissão.
+Escolha o caso e a lente da sua profissão. Os roteiros com respostas ficam numa área para professores.
 :::
 
-::: {.passo}
+::: {.passo .revelar}
 **Em aula**
 
-Os alunos exploram o mapa e os gráficos e respondem às perguntas.
+Comece pelos desafios desta página: o palpite errado é o melhor gancho para a discussão.
 :::
 
-::: {.passo}
+::: {.passo .revelar}
 **Aprofundamento**
 
-Os dados estão disponíveis em CSV, para análise no Excel, no R ou no Python.
+Baixe os CSVs para Excel, R ou Python, ou abra o notebook no Colab.
 :::
-:::
-
-Os roteiros com respostas comentadas ficam numa área separada para professores.
-
-## Estado do projeto
-
-Esta é a primeira versão. Já estão disponíveis:
-
-::: {.etiquetas}
-[Zoonoses e Saúde Única]{.etiqueta .pronto}
-[Dataset: óbito por leishmaniose visceral]{.etiqueta .pronto}
-:::
-
-Em preparação:
-
-::: {.etiquetas}
-[Sífilis congênita]{.etiqueta .breve}
-[Intoxicações exógenas]{.etiqueta .breve}
-[Acidentes com material biológico]{.etiqueta .breve}
-[Violência]{.etiqueta .breve}
-[Profissionais de saúde]{.etiqueta .breve}
-[Dataset: baixo peso ao nascer]{.etiqueta .breve}
-[Dataset: dengue]{.etiqueta .breve}
 :::
 
 ::: {.callout-warning}
 ## Uso responsável
 Este é um material **didático**. Notificação não é sinônimo de incidência real, e os modelos treinados com estes dados não devem ser usados em decisões clínicas. Veja a [metodologia](metodologia.qmd).
+:::
+:::
 :::

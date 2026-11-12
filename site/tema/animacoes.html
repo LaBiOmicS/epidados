@@ -1,0 +1,57 @@
+<script>
+// Animações da página inicial: revelar blocos ao rolar, contar números e desenhar gráficos.
+// Respeita "reduzir movimento" do sistema e funciona com conteúdo inserido depois pelo OJS.
+(() => {
+  const reduzir = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const fmt = (v, casas) => v.toLocaleString("pt-BR", {minimumFractionDigits: casas, maximumFractionDigits: casas});
+
+  function contar(el) {
+    const alvo = parseFloat(el.dataset.contar), casas = +(el.dataset.casas || 0), sufixo = el.dataset.sufixo || "";
+    if (!isFinite(alvo)) return;
+    if (reduzir) { el.textContent = fmt(alvo, casas) + sufixo; return; }
+    const inicio = performance.now(), duracao = 1400;
+    const passo = agora => {
+      const t = Math.min(1, (agora - inicio) / duracao), e = 1 - Math.pow(1 - t, 3);
+      el.textContent = fmt(alvo * e, casas) + sufixo;
+      if (t < 1) requestAnimationFrame(passo);
+    };
+    requestAnimationFrame(passo);
+  }
+
+  function preparar(el) {
+    // Linhas e áreas do gráfico ganham comprimento normalizado para a animação de traço
+    el.querySelectorAll("path").forEach(p => p.setAttribute("pathLength", "1"));
+  }
+
+  const observador = "IntersectionObserver" in window ? new IntersectionObserver(entradas => {
+    for (const e of entradas) {
+      if (!e.isIntersecting) continue;
+      const el = e.target;
+      observador.unobserve(el);
+      if (el.matches("[data-contar]")) contar(el);
+      el.classList.add("visivel");
+    }
+  }, {threshold: 0.2}) : null;
+
+  function registrar(raiz = document) {
+    raiz.querySelectorAll(".revelar:not([data-obs]), .desenhar:not([data-obs]), [data-contar]:not([data-obs])").forEach(el => {
+      el.dataset.obs = "1";
+      if (el.matches(".desenhar")) preparar(el);
+      if (!observador || reduzir) {
+        el.classList.add("visivel");
+        if (el.matches("[data-contar]")) contar(el);
+      } else observador.observe(el);
+    });
+  }
+
+  document.documentElement.classList.add(reduzir ? "sem-animacao" : "anim");
+  registrar();
+  // O OJS insere e recria elementos depois do carregamento
+  let pendente = false;
+  new MutationObserver(() => {
+    if (pendente) return;
+    pendente = true;
+    requestAnimationFrame(() => { pendente = false; registrar(); });
+  }).observe(document.body, {childList: true, subtree: true});
+})();
+</script>
