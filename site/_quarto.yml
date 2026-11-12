@@ -21,8 +21,14 @@ website:
         text: Início
       - text: Estudos de caso
         menu:
-          - href: casos/zoonoses.qmd
-            text: "Zoonoses e Saúde Única"
+          - href: casos/index.qmd
+            text: "Visão geral"
+          - href: casos/leishmaniose.qmd
+            text: "Leishmaniose visceral"
+          - href: casos/leptospirose.qmd
+            text: "Leptospirose"
+          - href: casos/raiva.qmd
+            text: "Raiva e atendimento antirrábico"
       - text: Dados para IA
         menu:
           - href: dados-ia/index.qmd

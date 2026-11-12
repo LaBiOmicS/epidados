@@ -13,7 +13,7 @@ const fs = require('fs');
 
 const base = process.argv[2] || 'http://localhost:8765/';
 const saida = process.argv[3] || 'capturas';
-const paginas = ['index.html', 'casos/zoonoses.html', 'metodologia.html', 'dados-ia/index.html', 'dados-ia/leishmaniose-obito.html', 'dados-ia/leishmaniose-analise.html'];
+const paginas = ['index.html', 'casos/index.html', 'casos/leishmaniose.html', 'casos/leptospirose.html', 'casos/raiva.html', 'metodologia.html', 'dados-ia/index.html', 'dados-ia/leishmaniose-obito.html', 'dados-ia/leishmaniose-analise.html'];
 
 (async () => {
   fs.mkdirSync(saida, { recursive: true });

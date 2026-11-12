@@ -1,0 +1,316 @@
+---
+title: "Raiva e atendimento antirrábico"
+subtitle: "Quem morde quem: do cão vacinado ao morcego e ao sagui"
+execute:
+  echo: false
+---
+
+{{< include _comum.qmd >}}
+
+```{ojs}
+//| output: false
+antrUf = FileAttachment("../dados/antr_uf_ano_especie.csv").csv({typed: true})
+antrMun = FileAttachment("../dados/antr_municipio_ano.csv").csv({typed: true})
+antrCond = FileAttachment("../dados/antr_especie_condicao.csv").csv({typed: true})
+antrConduta = FileAttachment("../dados/antr_especie_conduta.csv").csv({typed: true})
+situacaoAno = new Map(antrUf.map(d => [d.ano, d.situacao]))
+anosAntr = [...situacaoAno.keys()].sort()
+// Série de atendimentos por espécie: Brasil, UF ou município
+serieAntr = ({uf, municipio, campo = "total", especie} = {}) => {
+  if (municipio) {
+    const c = +codigoMun(municipio, uf);
+    const por = new Map(antrMun.filter(d => d.codigo7 === c).map(d => [d.ano, d[campo]]));
+    return anosAntr.map(ano => ({ano, casos: por.get(ano) ?? 0, situacao: situacaoAno.get(ano)}));
+  }
+  const f = antrUf.filter(d => (!uf || d.uf === uf) && (!especie || d.especie === especie));
+  const por = d3.rollup(f, v => d3.sum(v, d => d.atendimentos), d => d.ano);
+  return anosAntr.map(ano => ({ano, casos: por.get(ano) ?? 0, situacao: situacaoAno.get(ano)}));
+}
+valorAno = (serie, ano) => serie.find(d => d.ano === ano)?.casos
+```
+
+::: {.ficha}
+::: {}
+Cursos
+
+Medicina · Enfermagem · Farmácia · Medicina Veterinária
+:::
+
+::: {}
+Conceitos
+
+Profilaxia pós-exposição, ciclos de transmissão, eliminação de doença, demanda de insumos, "atendimento não é caso"
+:::
+
+::: {}
+Tempo sugerido
+
+2 aulas de 50 minutos
+:::
+
+::: {}
+Dados
+
+SINAN, atendimentos antirrábicos de 2007 a 2026 (2025 e 2026 preliminares), por município e espécie do animal
+:::
+:::
+
+## Contexto
+
+A raiva é uma encefalite causada por um vírus transmitido pela saliva de mamíferos infectados, por mordida, arranhão ou lambedura de mucosa. Depois que os sintomas aparecem, **a letalidade é de quase 100%**. Mas a doença é evitável: lavar o ferimento com água e sabão e iniciar a **profilaxia** (vacina e, nos casos graves, soro ou imunoglobulina) impede a infecção.
+
+Por isso, cada pessoa agredida por um animal que procura o SUS gera uma **ficha de atendimento antirrábico**. Esses atendimentos **não são casos de raiva**: são o retrato da prevenção funcionando. A conduta depende do animal:
+
+- **cão ou gato** que pode ser observado por 10 dias: muitas vezes basta observar o animal;
+- **morcego, sagui, raposa** e outros silvestres: toda agressão é considerada grave, porque não há como observar o animal.
+
+O Brasil completou em 2025 **dez anos sem raiva humana transmitida por variantes de cães** ([Ministério da Saúde](https://www.gov.br/saude/pt-br/assuntos/noticias/2025/setembro/brasil-completa-10-anos-sem-casos-de-raiva-humana-transmitida-por-caes)), resultado de décadas de vacinação canina. Os casos humanos que ainda ocorrem vêm sobretudo de **morcegos** e de outros animais silvestres: dos 48 casos registrados entre 2010 e 2024, 24 foram transmitidos por morcegos ([CNN Brasil, com dados do Ministério da Saúde](https://www.cnnbrasil.com.br/nacional/nordeste/pe/morre-em-pernambuco-mulher-que-contraiu-raiva-humana-apos-mordida-de-sagui/)). A [tabela oficial de casos](https://www.gov.br/saude/pt-br/assuntos/saude-de-a-a-z/r/raiva/arquivos/tabela-1.pdf) traz 54 casos de 2010 a 2026.
+
+## Na imprensa
+
+::: {.noticias}
+::: {.noticia}
+[Ministério da Saúde · 29/09/2025]{.noticia-meta}
+
+**[Brasil completa 10 anos sem casos de raiva humana transmitida por cães](https://www.gov.br/saude/pt-br/assuntos/noticias/2025/setembro/brasil-completa-10-anos-sem-casos-de-raiva-humana-transmitida-por-caes)**
+
+O último caso humano por variante canina foi em 2015, no Mato Grosso do Sul. O ministério informa investir cerca de R$ 231 milhões por ano em imunização e prepara o dossiê de eliminação para a OPAS/OMS.
+
+::: {.noticia-dado}
+```{ojs}
+caoBr = serieAntr({especie: "Cão"})
+totBr = serieAntr({})
+html`<div class="noticia-dado-texto"><strong>No SINAN:</strong> mesmo sem raiva humana por cães, o cão continua sendo o agressor em <strong>${fmt(100 * valorAno(caoBr, 2024) / valorAno(totBr, 2024), 0)}%</strong> dos ${fmt(valorAno(totBr, 2024))} atendimentos de 2024. Eliminar a doença não elimina a mordida: o serviço precisa continuar atendendo.</div>`
+```
+```{ojs}
+miniSerie(caoBr, {rotulo: "atendimentos por cão"})
+```
+:::
+:::
+
+::: {.noticia}
+[CNN Brasil · 13/01/2025]{.noticia-meta}
+
+**[Morre em Pernambuco mulher que contraiu raiva humana após mordida de sagui](https://www.cnnbrasil.com.br/nacional/nordeste/pe/morre-em-pernambuco-mulher-que-contraiu-raiva-humana-apos-mordida-de-sagui/)**
+
+Primeiro caso de raiva humana em Pernambuco em oito anos. A vítima, de 56 anos, foi mordida em Santa Maria do Cambucá, no Agreste. O Instituto Pasteur confirmou vírus de origem silvestre, de primata não humano.
+
+::: {.noticia-dado}
+```{ojs}
+pePrim = serieAntr({uf: "PE", especie: "Primata (macaco)"})
+html`<div class="noticia-dado-texto"><strong>No SINAN:</strong> atendimentos por agressão de primata em Pernambuco: ${fmt(valorAno(pePrim, 2024))} em 2024 e <strong>${fmt(valorAno(pePrim, 2025))} em 2025</strong> (dado preliminar). A procura cresceu depois do caso? Que outras explicações você consegue pensar?</div>`
+```
+```{ojs}
+miniSerie(pePrim, {destaque: [2025], rotulo: "atendimentos por primata"})
+```
+:::
+:::
+
+::: {.noticia}
+[CNN Brasil · 29/04/2022]{.noticia-meta}
+
+**[Minas Gerais confirma terceiro caso de raiva humana em crianças](https://www.cnnbrasil.com.br/saude/minas-gerais-confirma-terceiro-caso-de-raiva-humana-em-criancas/)**
+
+Três crianças indígenas Maxakali, da zona rural de Bertópolis, no Vale do Mucuri, tiveram raiva confirmada; duas morreram. Os primeiros casos tinham histórico de mordida de morcego.
+
+::: {.noticia-dado}
+```{ojs}
+bert = serieAntr({municipio: "Bertópolis", uf: "MG", campo: "morcego"})
+html`<div class="noticia-dado-texto"><strong>No SINAN:</strong> Bertópolis registra <strong>${fmt(valorAno(bert, 2022))} atendimentos</strong> por agressão de morcego em 2022 e ${fmt(d3.sum(bert.filter(d => d.ano < 2022), d => d.casos))} nos quinze anos anteriores. As crianças mordidas chegaram a ser atendidas a tempo? O que o dado de atendimento revela sobre o <strong>acesso</strong> ao serviço?</div>`
+```
+```{ojs}
+miniSerie(bert, {destaque: [2022], rotulo: "atendimentos por morcego"})
+```
+:::
+:::
+
+::: {.noticia}
+[Ministério da Saúde · tabela oficial · dados até 11/06/2026]{.noticia-meta}
+
+**[Casos de raiva humana por região e UF, Brasil, 2010 a 2026](https://www.gov.br/saude/pt-br/assuntos/saude-de-a-a-z/r/raiva/arquivos/tabela-1.pdf)**
+
+Nota da tabela: "Em 2018 houve registro de surto no Pará, acometendo 10 pessoas, todas com morcegos envolvidos na transmissão". Foram 11 casos no Brasil naquele ano, o maior número da série.
+
+::: {.noticia-dado}
+```{ojs}
+melg = serieAntr({municipio: "Melgaço", uf: "PA", campo: "morcego"})
+morcBr = serieAntr({especie: "Morcego"})
+html`<div class="noticia-dado-texto"><strong>No SINAN:</strong> em 2018, o município de Melgaço (PA) registrou <strong>${fmt(valorAno(melg, 2018))} atendimentos</strong> por agressão de morcego e ${fmt(valorAno(melg, 2019))} em 2019. Nos demais anos, foram no máximo ${fmt(d3.max(melg.filter(d => d.ano < 2018 || d.ano > 2019), d => d.casos))}. Só em 2018, Melgaço respondeu por ${fmt(100 * valorAno(melg, 2018) / valorAno(morcBr, 2018), 0)}% dos atendimentos por morcego do Brasil. O que um pico assim indica sobre a resposta a um surto?</div>`
+```
+```{ojs}
+miniSerie(melg, {destaque: [2018], rotulo: "atendimentos por morcego"})
+```
+:::
+:::
+
+::: {.noticia}
+[Agência Brasil · 09/07/2025]{.noticia-meta}
+
+**[DF tem dois casos de raiva em morcegos e Saúde intensifica cuidados](https://agenciabrasil.ebc.com.br/saude/noticia/2025-07/df-tem-dois-casos-de-raiva-em-morcegos-e-saude-intensifica-cuidados)**
+
+Dois morcegos da espécie *Artibeus lituratus*, encontrados em Sobradinho e Planaltina, testaram positivo. Segundo a Secretaria de Saúde, eles tiveram contato apenas com cães, sem exposição humana.
+
+::: {.noticia-dado}
+```{ojs}
+html`<div class="noticia-dado-texto"><strong>No SINAN:</strong> os atendimentos por agressão de morcego no Brasil passaram de ${fmt(valorAno(morcBr, 2007))} em 2007 para ${fmt(valorAno(morcBr, 2024))} em 2024. Mais morcegos raivosos, mais gente procurando o serviço, ou as duas coisas?</div>`
+```
+```{ojs}
+miniSerie(morcBr, {destaque: [2018], rotulo: "atendimentos por morcego"})
+```
+:::
+:::
+:::
+
+## Explore os dados
+
+### Quem morde quem?
+
+```{ojs}
+viewof ufAntr = Inputs.select(["Brasil", ...ufs], {label: "UF", value: "Brasil"})
+antrSerie = antrUf.filter(d => ufAntr === "Brasil" || d.uf === ufAntr)
+Plot.plot({
+  width: L, height: 300, marginLeft: 60,
+  y: {label: "Atendimentos", grid: true, tickFormat: eixoMil},
+  x: eixoAno,
+  color: {legend: true, scheme: "Tableau10", domain: ["Cão", "Gato", "Morcego", "Primata (macaco)", "Raposa", "Herbívoro doméstico", "Outro", "Ignorado"]},
+  marks: [Plot.barY(antrSerie, Plot.groupX({y: "sum"}, {x: "ano", y: "atendimentos", fill: "especie", tip: true})), Plot.ruleY([0])]
+})
+```
+
+### Onde as agressões por cada espécie são mais comuns?
+
+```{ojs}
+viewof especieMapa = Inputs.select(new Map([["Cão", "cao"], ["Gato", "gato"], ["Morcego", "morcego"], ["Primata (macaco)", "primata"], ["Herbívoro doméstico", "herbivoro"], ["Todos", "total"]]), {label: "Espécie no mapa", value: "morcego"})
+valoresAntr = {
+  const n = d3.rollup(antrMun, v => d3.sum(v, d => d[especieMapa]), d => String(d.codigo7));
+  return new Map([...n].filter(([, v]) => v > 0).map(([c, v]) => [c, 1e5 * v / popPeriodo(c, anosAntr[0], anosAntr.at(-1))]));
+}
+mapa(valoresAntr, {legenda: "Atendimentos por 100 mil hab./ano", esquema: "PuRd"})
+```
+
+```{ojs}
+md`O mapa soma todo o período disponível (${anosAntr[0]}–${anosAntr.at(-1)}). Os anos mais recentes ainda são **preliminares**.`
+```
+
+### O animal estava sadio? E o que foi feito?
+
+Todos os anos somados. Compare as linhas do cão e do morcego.
+
+```{ojs}
+especiesComparar = ["Cão", "Gato", "Morcego", "Primata (macaco)", "Raposa", "Herbívoro doméstico"]
+somarAnos = (dados, campo) => d3.rollups(dados.filter(d => especiesComparar.includes(d.especie)),
+  v => d3.sum(v, d => d.atendimentos), d => d.especie, d => d[campo])
+  .flatMap(([especie, gs]) => gs.map(([categoria, atendimentos]) => ({especie, categoria, atendimentos})))
+condutas = ["Observação do animal", "Observação do animal + vacina", "Vacina", "Soro + vacina", "Esquema de reexposição", "Pré-exposição", "Dispensa de tratamento", "Não informado"]
+condicoes = ["Sadio", "Suspeito", "Raivoso", "Morto ou desaparecido", "Ignorado"]
+Plot.plot({
+  width: L, height: 260, marginLeft: estreito ? 110 : 150,
+  x: {label: "% dos atendimentos", percent: true},
+  y: {label: null, domain: especiesComparar, tickFormat: cortar(16)},
+  color: {legend: true, domain: condicoes, range: ["#2e9e4f", "#f0a030", "#b2182b", "#7b6fa8", "#bdbdbd"]},
+  marks: [Plot.barX(somarAnos(antrCond, "condicao"),
+    Plot.stackX({offset: "normalize", order: condicoes, y: "especie", x: "atendimentos", fill: "categoria", tip: true}))]
+})
+```
+
+```{ojs}
+Plot.plot({
+  width: L, height: 260, marginLeft: estreito ? 110 : 150,
+  x: {label: "% dos atendimentos", percent: true},
+  y: {label: null, domain: especiesComparar, tickFormat: cortar(16)},
+  color: {legend: true, scheme: "Tableau10", domain: condutas},
+  marks: [Plot.barX(somarAnos(antrConduta, "conduta"),
+    Plot.stackX({offset: "normalize", order: condutas, y: "especie", x: "atendimentos", fill: "categoria", tip: true}))]
+})
+```
+
+## Como trabalhar em aula
+
+Pergunta central: **se o Brasil quase eliminou a raiva, por que atende centenas de milhares de agressões por ano?** O caso separa três coisas que a turma costuma confundir: o caso da doença, a exposição ao risco e o atendimento preventivo.
+
+::: {.roteiro}
+::: {.etapa}
+[Aula 1 · 10 min]{.tempo}
+
+**Duas manchetes.** Mostre juntas a notícia dos "10 anos sem raiva por cães" e a do sagui em Pernambuco. A raiva está acabando ou não? Cada aluno responde em uma frase.
+:::
+
+::: {.etapa}
+[Aula 1 · 25 min]{.tempo}
+
+**Atendimento não é caso.** Com o gráfico "Quem morde quem?" e o mapa, os grupos descrevem o volume de atendimentos e a espécie agressora na sua UF. Depois, comparam com o número de casos humanos da tabela oficial. Que ordem de grandeza separa os dois?
+:::
+
+::: {.etapa}
+[Aula 1 · 15 min]{.tempo}
+
+**Os picos.** Cada grupo investiga um dos picos das notícias (Melgaço 2018, Bertópolis 2022, Pernambuco 2025) e explica o que aconteceu no serviço de saúde naquele lugar e ano.
+:::
+
+::: {.etapa}
+[Aula 2 · 30 min]{.tempo}
+
+**Três vinhetas clínicas.** Grupos interprofissionais decidem a conduta para (1) mordida superficial na mão por cão vacinado que pode ser observado; (2) arranhão de gato de rua que fugiu; (3) morcego encontrado dentro do quarto de uma criança. Comparem as respostas com o protocolo do Ministério da Saúde e com os gráficos de condição e conduta desta página.
+:::
+
+::: {.etapa}
+[Aula 2 · 20 min]{.tempo}
+
+**Planejamento de insumos.** Com a série da sua UF e a proporção de condutas, estimem quantas doses de vacina e de soro o estado precisa por ano. O que acontece se houver um surto como o de 2018?
+:::
+:::
+
+**Avaliação sugerida:** diferencia atendimento de caso; justifica a conduta pela espécie e pela condição do animal; usa a série histórica para estimar demanda; identifica pelo menos um grupo com dificuldade de acesso ao atendimento.
+
+**Para turmas de ciência de dados:** a série de atendimentos por morcego tem tendência e picos isolados. É um bom exercício de detecção de anomalias: o método encontra 2018? Encontra Bertópolis, num município com poucos atendimentos?
+
+## Perguntas por profissão
+
+::: {.lente .vet}
+#### []{.bi .bi-heart} Medicina Veterinária
+1. Compare a condição do animal agressor entre cães e morcegos. O que explica a diferença?
+2. Qual é o papel do médico-veterinário na observação de cães e gatos agressores por 10 dias?
+3. A vacinação canina eliminou a variante do cão. Por que ela não protege contra a raiva do morcego e do sagui?
+:::
+
+::: {.lente .med}
+#### []{.bi .bi-heart-pulse} Medicina
+1. Um paciente chega após mordedura de morcego. Qual é a conduta e por que ela difere da mordedura por cão sadio e observável?
+2. Por que a raiva tem letalidade de quase 100% depois dos sintomas, mas é evitável antes deles?
+3. Que pacientes têm mais chance de não procurar atendimento depois de uma agressão?
+:::
+
+::: {.lente .enf}
+#### []{.bi .bi-bandaid} Enfermagem
+1. Observe a proporção de atendimentos com conduta "Observação do animal". Que papel a enfermagem tem no acompanhamento desses casos?
+2. Quais são os cuidados imediatos com o ferimento e por que eles importam?
+3. Como garantir que o esquema de vacinas seja completado? O que acontece com quem abandona?
+:::
+
+::: {.lente .far}
+#### []{.bi .bi-capsule} Farmácia
+1. Estime a demanda de vacina e soro antirrábico a partir do gráfico de condutas. Que desafios logísticos isso traz para a assistência farmacêutica?
+2. Que cuidados de conservação exigem a vacina e o soro?
+3. Como redistribuir estoque quando um município tem um pico inesperado, como Melgaço em 2018?
+:::
+
+## Limites do dado
+
+::: {.limites}
+- **Atendimento não é caso.** Cada registro é uma pessoa que procurou atendimento após uma agressão, não um caso de raiva.
+- **Quem não procura não aparece.** Populações com pouco acesso ao serviço (rurais, indígenas, ribeirinhas) ficam sub-representadas justamente onde o risco silvestre é maior.
+- **Não há dados animais.** Raiva em morcegos, cães e herbívoros é monitorada por outras redes, sem base nacional aberta e integrada.
+- **Anos preliminares.** 2025 e 2026 ainda serão revisados.
+:::
+
+## Baixar os dados
+
+| Arquivo | Conteúdo |
+|---|---|
+| [antr_municipio_ano.csv](../dados/antr_municipio_ano.csv) | Atendimentos por município, ano e espécie |
+| [antr_uf_ano_especie.csv](../dados/antr_uf_ano_especie.csv) | Atendimentos por UF, ano e espécie |
+| [antr_especie_condicao.csv](../dados/antr_especie_condicao.csv) | Condição do animal agressor por espécie e ano |
+| [antr_especie_conduta.csv](../dados/antr_especie_conduta.csv) | Conduta adotada por espécie e ano |
+| [populacao_municipio.csv](../dados/populacao_municipio.csv) | População por município e ano |
+
+Fontes: Ministério da Saúde, SINAN/DATASUS; IBGE. Veja a [metodologia](../metodologia.qmd).

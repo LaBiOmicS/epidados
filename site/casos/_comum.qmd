@@ -1,0 +1,75 @@
+```{ojs}
+//| output: false
+// Código comum aos estudos de caso (incluído em cada página com {{< include _comum.qmd >}})
+municipiosCsv = FileAttachment("../dados/municipios.csv").csv()
+munInfo = new Map(municipiosCsv.map(d => [d.codigo7, d]))
+codigoMun = (nome, uf) => municipiosCsv.find(d => d.municipio === nome && d.uf === uf)?.codigo7
+popUf = FileAttachment("../dados/populacao_uf_ano.csv").csv({typed: true})
+regiaoDaUf = new Map(popUf.map(d => [d.uf, d.regiao]))
+nomeUf = new Map(popUf.map(d => [d.uf, d.uf_nome]))
+popMunCsv = FileAttachment("../dados/populacao_municipio.csv").csv({typed: true})
+popMun = new Map(popMunCsv.map(d => [String(d.codigo7), d]))
+malha = FileAttachment("../dados/malha_municipios.geojson").json()
+malhaUF = FileAttachment("../dados/malha_uf.geojson").json()
+
+eixo = d => d.toLocaleString("pt-BR")
+eixoMil = d => d === 0 ? "0" : (d / 1000).toLocaleString("pt-BR") + " mil"
+fmt = (v, casas = 0) => v == null || isNaN(v) ? "–" : v.toLocaleString("pt-BR", {minimumFractionDigits: casas, maximumFractionDigits: casas})
+cor = ({primaria: "#1a8a82", clara: "#9fd3cd", acento: "#d0583f", ouro: "#e0a526"})
+ufs = [...new Set(popUf.map(d => d.uf))].sort()
+mesesNome = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"]
+
+// Gráficos acompanham a largura da página (`width` é reativo no OJS do Quarto)
+estreito = width < 600
+L = Math.min(width, 860)
+// No celular, um rótulo de ano a cada quatro
+eixoAno = ({label: null, tickFormat: d => String(d), ticks: estreito ? d3.range(2007, 2027, 4) : undefined})
+cortar = (n) => s => estreito && s.length > n ? s.slice(0, n - 1) + "…" : s
+
+// Soma da população de um município num intervalo de anos (pessoas-ano)
+popPeriodo = (codigo, a0, a1) => {
+  const linha = popMun.get(String(codigo));
+  if (!linha) return NaN;
+  let s = 0;
+  for (let a = a0; a <= a1; a++) s += linha["p" + a] ?? 0;
+  return s;
+}
+
+cartoes = (itens) => html`<div class="cartoes">${itens.map(([rotulo, valor]) =>
+  html`<div class="cartao"><small>${rotulo}</small><div class="destaque-numero">${valor}</div></div>`)}</div>`
+
+// Mini-série para os quadros "No SINAN" das notícias
+miniSerie = (dados, {y = "casos", destaque = [], rotulo = "casos"} = {}) => Plot.plot({
+  width: estreito ? width - 70 : Math.min(L, 520), height: 130, marginLeft: 44, marginBottom: 24,
+  x: {label: null, tickFormat: d => String(d), ticks: d3.range(2007, 2027, estreito ? 6 : 3)},
+  y: {label: null, grid: true, tickFormat: d3.max(dados, d => d[y]) >= 10000 ? eixoMil : eixo, ticks: 3},
+  marks: [
+    Plot.barY(dados, {x: "ano", y, fill: d => destaque.includes(d.ano) ? cor.acento : cor.primaria, tip: true,
+      title: d => `${d.ano}: ${fmt(d[y])} ${rotulo}${d.situacao === "preliminar" ? " (preliminar)" : ""}`,
+      fillOpacity: d => d.situacao === "preliminar" ? 0.45 : 1}),
+    Plot.ruleY([0])
+  ]
+})
+
+function mapa(valores, {legenda, esquema = "YlOrRd", formato = d => fmt(d, 1), largura = Math.min(width, 640)} = {}) {
+  const coloridos = malha.features.filter(f => (valores.get(f.properties.codigo) ?? 0) > 0);
+  return Plot.plot({
+    width: largura,
+    height: largura * 0.95,
+    projection: {type: "mercator", domain: malhaUF},
+    color: {type: "quantile", n: 6, scheme: esquema, legend: true, label: legenda, tickFormat: formato},
+    marks: [
+      Plot.geo(malhaUF, {fill: "currentColor", fillOpacity: 0.07}),
+      Plot.geo(coloridos, {
+        fill: f => valores.get(f.properties.codigo),
+        title: f => {
+          const m = munInfo.get(f.properties.codigo);
+          return `${m?.municipio ?? f.properties.codigo} (${m?.uf ?? ""})\n${legenda}: ${formato(valores.get(f.properties.codigo))}`;
+        },
+        tip: true
+      }),
+      Plot.geo(malhaUF, {stroke: "currentColor", strokeWidth: 0.5, strokeOpacity: 0.6, fill: "none"})
+    ]
+  });
+}
+```

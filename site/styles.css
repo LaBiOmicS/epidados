@@ -2,6 +2,17 @@
    As cores vêm das variáveis --ed-* definidas em tema/claro.scss e tema/escuro.scss. */
 
 /* ---------- Base ---------- */
+/* Quebras de linha equilibradas: sem palavra sozinha no fim de títulos e parágrafos */
+h1, h2, .title, .subtitle, .op-sub { text-wrap: balance; }
+p, li, h3, h4, .noticia-dado-texto, .rotulo, small { text-wrap: pretty; }
+main p, main li { hyphens: manual; overflow-wrap: break-word; }
+main li > p { margin-bottom: .35rem; }
+main ul, main ol { padding-left: 1.3rem; }
+main li { margin-bottom: .3rem; }
+main li::marker { color: var(--ed-mutado); }
+/* Saídas do OJS (md`…`) com o mesmo ritmo do texto */
+.cell-output-display .observablehq > p:last-child, .cell-output-display .observablehq > ul:last-child { margin-bottom: 0; }
+.cell + p, .cell + ul { margin-top: 1rem; }
 body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
 h1, h2, h3, .title { letter-spacing: -.01em; font-variation-settings: "opsz" 72; }
 h2 { margin-top: 2.6rem; padding-bottom: .4rem; border-bottom: 1px solid var(--ed-borda); }
@@ -72,7 +83,7 @@ a:hover { text-decoration-thickness: 2px; }
 
 /* ---------- Ficha do caso ---------- */
 .ficha {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 1rem 1.5rem;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem 1.5rem;
   padding: 1.1rem 1.3rem; margin: 0 0 2rem; border-radius: .9rem;
   background: var(--ed-superficie); border: 1px solid var(--ed-borda);
 }
@@ -125,6 +136,7 @@ figure svg, .observablehq svg { max-width: 100%; height: auto; }
   content: "\F33B"; font-family: "bootstrap-icons"; position: absolute; left: 1.15rem; top: 1.05rem;
   font-size: 1.3rem; color: var(--ed-alerta);
 }
+.limites { margin-bottom: 1.5rem; }
 .limites ul { margin: 0; padding-left: 1rem; }
 .limites li { margin-bottom: .5rem; }
 .limites li:last-child { margin-bottom: 0; }
@@ -164,6 +176,10 @@ code { font-size: .88em; }
   .cartao:last-child:nth-child(odd) { grid-column: 1 / -1; }
   .destaque-numero { font-size: 1.55rem; }
   main table { font-size: .88rem; }
+  .noticia { padding: 1rem .95rem .9rem; }
+  .noticia-dado { padding: .75rem .8rem .4rem; margin-left: -.2rem; margin-right: -.2rem; }
+  .noticia > p:nth-child(2) { font-size: 1.1rem; }
+  .roteiro { padding-left: 1.4rem; }
   .cell-output-display .observablehq > svg, .cell-output-display .observablehq > figure { padding: .4rem; }
 }
 
@@ -208,7 +224,9 @@ body:has(.op-hero) #quarto-content { padding: 0 !important; }
   -webkit-background-clip: text; background-clip: text; color: transparent; padding-right: .08em;
 }
 .op-lead { display: block; font-size: 1.15rem; line-height: 1.6; color: rgba(234, 244, 242, .8); max-width: 54ch; }
-.op-acoes { display: flex; flex-wrap: wrap; gap: .65rem; margin-top: 1.75rem; }
+.op-acoes { display: grid; grid-template-columns: 1fr 1fr; gap: .65rem; margin-top: 1.75rem; max-width: 30rem; }
+.op-acoes .btn { display: flex; align-items: center; justify-content: center; gap: .4rem; }
+.op-acoes .op-btn-principal { grid-column: 1 / -1; padding: 1rem 1.5rem; font-size: 1.15rem; }
 .op-acoes p { display: contents; }
 .op-btn-claro { background: var(--op-ouro); color: #1b1606; border: 0; }
 .op-btn-claro:hover { background: #ffd56b; color: #1b1606; transform: translateY(-1px); }
@@ -347,7 +365,7 @@ html.anim .desenhar:not(.visivel) g[aria-label="area"] path { animation: none; }
 }
 @media (max-width: 600px) {
   .op-conteudo, .op-hero-grade { padding: 0 1rem; }
-  .op-acoes .btn { flex: 1 1 100%; text-align: center; }
+  .op-acoes .btn { padding-left: .5rem; padding-right: .5rem; font-size: .95rem; }
   .op-num { font-size: 1.65rem; }
   .op-contadores { gap: 1.25rem 1.75rem; }
   .op-painel { padding: 1rem; }
@@ -357,4 +375,63 @@ html.anim .desenhar:not(.visivel) g[aria-label="area"] path { animation: none; }
 @media (prefers-reduced-motion: reduce) {
   .op-hero::before { animation: none; }
   .op-mapa svg path { transition: none; }
+}
+
+/* =====================================================================
+   Estudos de caso
+   ===================================================================== */
+/* Cartões dos casos (visão geral) */
+.casos { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.1rem; margin: 2rem 0 1rem; }
+.caso-cartao {
+  --cor: var(--ed-primaria);
+  position: relative; display: flex; flex-direction: column; padding: 1.4rem 1.4rem 1.2rem; border-radius: 1rem;
+  background: var(--ed-superficie); border: 1px solid var(--ed-borda); border-top: 4px solid var(--cor); box-shadow: var(--ed-sombra);
+  transition: transform .18s ease, border-color .18s ease;
+}
+.caso-cartao:hover { transform: translateY(-3px); }
+.caso-cartao.lv { --cor: #c4532f; }
+.caso-cartao.lept { --cor: #1f78b4; }
+.caso-cartao.raiva { --cor: #7b4fa8; }
+.caso-tag { font-size: .75rem; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--cor); }
+.caso-cartao h3 { margin: .5rem 0 .6rem; font-size: 1.3rem; line-height: 1.25; }
+.caso-cartao p { color: var(--ed-mutado); font-size: .96rem; margin-bottom: .8rem; }
+.caso-cartao p:last-child { margin-top: auto; margin-bottom: 0; font-weight: 600; }
+.caso-cartao p:last-child a { text-decoration: none; }
+.caso-cartao p:last-child a::after { content: ""; position: absolute; inset: 0; border-radius: 1rem; }
+
+/* Notícias com o dado do SINAN */
+.noticias { display: grid; gap: 1.25rem; margin: 1.25rem 0 2rem; }
+.noticia {
+  padding: 1.25rem 1.4rem 1.1rem; border-radius: .9rem;
+  background: var(--ed-superficie); border: 1px solid var(--ed-borda); box-shadow: var(--ed-sombra);
+}
+.noticia > p { margin-bottom: .6rem; }
+.noticia-meta { font-size: .78rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--ed-mutado); }
+.noticia > p:nth-child(2) { font-family: "Fraunces", Georgia, serif; font-size: 1.2rem; line-height: 1.3; margin-bottom: .5rem; }
+.noticia > p:nth-child(2) strong { font-weight: 650; }
+.noticia > p:nth-child(2) a { color: var(--ed-tinta); text-decoration-color: var(--ed-borda); }
+.noticia > p:nth-child(2) a:hover { color: var(--ed-primaria); }
+.noticia > p:nth-child(2) a::after { content: " ↗"; font-family: "Inter", sans-serif; font-size: .8em; color: var(--ed-mutado); }
+.noticia > p:nth-child(3) { color: var(--ed-mutado); font-size: .97rem; }
+.noticia-dado {
+  margin-top: .9rem; padding: .9rem 1rem .5rem; border-radius: .7rem;
+  background: var(--ed-primaria-suave); border-left: 4px solid var(--ed-primaria);
+}
+.noticia-dado-texto { font-size: .95rem; line-height: 1.55; margin-bottom: .4rem; }
+.noticia-dado .cell-output-display .observablehq > svg, .noticia-dado .cell-output-display .observablehq > figure { background: none; border: 0; padding: 0; }
+.noticia-dado svg[class^="plot-"] { background: transparent; }
+.noticia-dado .cell { margin: 0; }
+
+/* Roteiro de aula */
+.roteiro { position: relative; margin: 1.5rem 0 1.75rem; padding-left: 1.6rem; }
+.roteiro::before { content: ""; position: absolute; left: .45rem; top: .4rem; bottom: .4rem; width: 2px; background: var(--ed-borda); }
+.etapa { position: relative; margin-bottom: 1.1rem; }
+.etapa::before {
+  content: ""; position: absolute; left: -1.53rem; top: .3rem; width: .85rem; height: .85rem; border-radius: 50%;
+  background: var(--ed-papel); border: 3px solid var(--ed-primaria);
+}
+.etapa > p { margin-bottom: .3rem; }
+.tempo {
+  display: inline-block; font-family: "JetBrains Mono", monospace; font-size: .76rem; font-weight: 500;
+  color: var(--ed-primaria); background: var(--ed-primaria-suave); padding: .1rem .5rem; border-radius: .35rem;
 }

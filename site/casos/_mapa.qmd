@@ -1,0 +1,39 @@
+```{ojs}
+// Mapa municipal do agravo da página (a página define `agravoPagina` e carrega `zMun`)
+anosAgravo = [...new Set(zMun.filter(d => d.agravo === agravoPagina).map(d => d.ano))].sort()
+viewof anoIni = Inputs.select(anosAgravo, {label: "De", value: anosAgravo[0], format: String})
+viewof anoFim = Inputs.select(anosAgravo.filter(a => a >= anoIni), {label: "Até", value: anosAgravo[anosAgravo.length - 1], format: String})
+viewof medida = Inputs.radio(["Incidência por 100 mil", "Casos"], {value: "Incidência por 100 mil", label: "Medida"})
+```
+
+```{ojs}
+valoresMapa = {
+  const casos = d3.rollup(zMun.filter(d => d.agravo === agravoPagina && d.ano >= anoIni && d.ano <= anoFim),
+    v => d3.sum(v, d => d.casos), d => String(d.codigo7));
+  if (medida === "Casos") return casos;
+  return new Map([...casos].map(([c, n]) => [c, 1e5 * n / popPeriodo(c, anoIni, anoFim)]));
+}
+mapa(valoresMapa, {legenda: medida === "Casos" ? "Casos confirmados" : "Casos por 100 mil hab./ano", formato: d => fmt(d, medida === "Casos" ? 0 : 1)})
+```
+
+O mapa mostra o **município de residência**. A incidência é calculada sobre a soma da população de todos os anos do período (pessoas-ano).
+
+```{ojs}
+rankingMun = [...valoresMapa].map(([c, v]) => ({
+  municipio: munInfo.get(c)?.municipio, uf: munInfo.get(c)?.uf,
+  valor: v,
+  casos: d3.sum(zMun.filter(d => d.agravo === agravoPagina && String(d.codigo7) === c && d.ano >= anoIni && d.ano <= anoFim), d => d.casos),
+  populacao: popMun.get(c)?.["p" + anoFim]
+})).sort((a, b) => b.valor - a.valor)
+Inputs.table(rankingMun, {
+  columns: ["municipio", "uf", "valor", "casos", "populacao"],
+  header: {municipio: "Município", uf: "UF", valor: medida, casos: "Casos no período", populacao: `População ${anoFim}`},
+  format: {valor: d => fmt(d, medida === "Casos" ? 0 : 1), casos: d => fmt(d), populacao: d => fmt(d)},
+  rows: 10
+})
+```
+
+::: {.callout-tip}
+## Experimente
+Ordene a tabela por incidência e depois por casos. Os municípios do topo são os mesmos? Por que municípios com poucos habitantes dominam o ranking de incidência?
+:::

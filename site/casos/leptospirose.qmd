@@ -1,0 +1,256 @@
+---
+title: "Leptospirose"
+subtitle: "Chuva, enchente e rato: o que a tragédia do Rio Grande do Sul mostrou nos dados"
+execute:
+  echo: false
+---
+
+{{< include _comum.qmd >}}
+
+```{ojs}
+//| output: false
+agravoPagina = "LEPT"
+zUf = FileAttachment("../dados/zoonoses_uf_ano.csv").csv({typed: true})
+zMun = FileAttachment("../dados/zoonoses_municipio_ano.csv").csv({typed: true})
+zMes = FileAttachment("../dados/zoonoses_uf_mes.csv").csv({typed: true})
+zPerfil = FileAttachment("../dados/zoonoses_perfil_brasil.csv").csv({typed: true})
+leptUf = (uf) => zUf.filter(d => d.agravo === "LEPT" && d.uf === uf).sort((a, b) => a.ano - b.ano)
+rs = leptUf("RS")
+rsAno = ano => rs.find(d => d.ano === ano)
+rsMes = zMes.filter(d => d.agravo === "LEPT" && d.uf === "RS")
+```
+
+::: {.ficha}
+::: {}
+Cursos
+
+Medicina · Enfermagem · Farmácia · Medicina Veterinária
+:::
+
+::: {}
+Conceitos
+
+Sazonalidade, surto, data de início dos sintomas, atraso de notificação, determinantes ambientais
+:::
+
+::: {}
+Tempo sugerido
+
+2 aulas de 50 minutos
+:::
+
+::: {}
+Dados
+
+SINAN, casos confirmados de 2007 a 2026 (anos recentes preliminares), por mês e município
+:::
+:::
+
+## Contexto
+
+A leptospirose é causada por bactérias do gênero *Leptospira*, eliminadas na **urina de roedores**, principalmente a ratazana de esgoto. A bactéria sobrevive na água e na lama e entra no corpo pela pele com feridas, pela pele que ficou muito tempo submersa ou pelas mucosas. Por isso a doença acompanha o calendário das **chuvas** e explode depois de **enchentes**.
+
+Os sintomas aparecem em geral entre 5 e 14 dias após a exposição: febre, dor de cabeça e dor muscular intensa, típica na panturrilha. A maioria dos casos é leve, mas a forma grave pode causar icterícia, insuficiência renal e hemorragia pulmonar, com alta letalidade. O tratamento com antibiótico é mais eficaz quando começa cedo, e por isso a suspeita clínica depois de uma enchente é decisiva.
+
+É uma doença de **Saúde Única** por excelência: depende de saneamento, coleta de lixo, controle de roedores, moradia e clima, e também infecta cães e animais de produção.
+
+## Na imprensa
+
+Em maio de 2024, enchentes atingiram a maior parte do Rio Grande do Sul. Acompanhe pelas notícias como os números da leptospirose cresceram, e compare com o que o SINAN registra hoje.
+
+::: {.noticias}
+::: {.noticia}
+[Agência Brasil · 25/05/2024]{.noticia-meta}
+
+**[Rio Grande do Sul investiga mais de 800 casos de leptospirose](https://agenciabrasil.ebc.com.br/saude/noticia/2024-05/rio-grande-do-sul-investiga-mais-de-800-casos-de-leptospirose)**
+
+Três semanas depois do início das enchentes, o estado tinha 1.072 notificações, 54 casos confirmados e 4 mortes confirmadas. O laboratório central analisava mais de 800 amostras.
+
+::: {.noticia-dado}
+```{ojs}
+maio24 = rsMes.find(d => d.ano === 2024 && d.mes === 5)?.casos
+html`<div class="noticia-dado-texto"><strong>No SINAN hoje:</strong> ${fmt(maio24)} casos confirmados no RS com <em>primeiros sintomas</em> em maio de 2024. Na data da notícia, só 54 estavam confirmados. A diferença é o <strong>atraso</strong> entre adoecer, notificar, colher exame e confirmar.</div>`
+```
+```{ojs}
+rs2324 = rsMes.filter(d => d.ano === 2023 || d.ano === 2024).map(d => ({...d, serie: String(d.ano)}))
+Plot.plot({
+  width: estreito ? width - 70 : Math.min(L, 520), height: 160, marginLeft: 36, marginBottom: 26,
+  fx: {label: null, axis: "bottom", padding: 0.15, tickFormat: m => mesesNome[m - 1][0].toUpperCase()},
+  x: {axis: null, domain: ["2023", "2024"]},
+  y: {label: null, grid: true, ticks: 3},
+  color: {legend: true, domain: ["2023", "2024"], range: [cor.clara, cor.acento]},
+  marks: [Plot.barY(rs2324, {fx: "mes", x: "serie", y: "casos", fill: "serie", tip: true}), Plot.ruleY([0])]
+})
+```
+:::
+:::
+
+::: {.noticia}
+[Agência Brasil · 11/07/2024]{.noticia-meta}
+
+**[Rio Grande do Sul confirma 25 mortes por leptospirose](https://agenciabrasil.ebc.com.br/saude/noticia/2024-07/rio-grande-do-sul-confirma-25-mortes-por-leptospirose)**
+
+Dois meses depois, eram 546 casos confirmados, 25 mortes em 23 municípios e 6.520 notificações, das quais 3.811 ainda em investigação. A mesma matéria registra 3.866 atendimentos antirrábicos e 959 acidentes com animais peçonhentos no período.
+
+::: {.noticia-dado}
+```{ojs}
+html`<div class="noticia-dado-texto"><strong>No SINAN hoje:</strong> o RS fechou 2024 com <strong>${fmt(rsAno(2024).casos)} casos confirmados</strong> e ${fmt(rsAno(2024).obitos)} óbitos, contra ${fmt(rsAno(2023).casos)} casos em 2023. O número da notícia era menos da metade do total consolidado. Uma enchente também aumenta outros agravos: veja o <a href="raiva.qmd">caso do atendimento antirrábico</a>.</div>`
+```
+```{ojs}
+miniSerie(rs, {destaque: [2024]})
+```
+:::
+:::
+:::
+
+## Explore os dados
+
+### O ritmo das chuvas
+
+Escolha uma UF. A série usa a **data dos primeiros sintomas**.
+
+```{ojs}
+viewof ufLept = Inputs.select(["Brasil", ...ufs], {label: "UF", value: "RS"})
+leptMes = {
+  const f = zMes.filter(d => d.agravo === "LEPT" && (ufLept === "Brasil" || d.uf === ufLept));
+  return d3.rollups(f, v => d3.sum(v, d => d.casos), d => d.ano, d => d.mes)
+    .flatMap(([ano, ms]) => ms.map(([mes, casos]) => ({data: new Date(ano, mes - 1, 1), ano, mes, casos})))
+    .sort((a, b) => a.data - b.data);
+}
+Plot.plot({
+  width: L, height: 260, marginLeft: 50,
+  y: {label: "Casos confirmados por mês", grid: true, tickFormat: eixo},
+  x: {label: null},
+  marks: [Plot.areaY(leptMes, {x: "data", y: "casos", fill: cor.primaria, fillOpacity: 0.25}),
+          Plot.lineY(leptMes, {x: "data", y: "casos", stroke: cor.primaria, tip: true}),
+          Plot.ruleY([0])]
+})
+```
+
+```{ojs}
+Plot.plot({
+  width: L, height: 380, marginLeft: 50, padding: 0.05,
+  x: {label: null, tickFormat: m => estreito ? mesesNome[m - 1][0].toUpperCase() : mesesNome[m - 1]},
+  y: {label: null, tickFormat: d => String(d)},
+  color: {scheme: "YlGnBu", legend: true, label: "Casos"},
+  marks: [Plot.cell(leptMes, {x: "mes", y: "ano", fill: "casos", tip: true})]
+})
+```
+
+Cada linha do mapa de calor é um ano. Procure as células mais escuras: em que meses e anos elas aparecem? Troque a UF para Pernambuco, Santa Catarina ou São Paulo e compare as épocas de chuva.
+
+### Onde estão os casos?
+
+{{< include _mapa.qmd >}}
+
+### A que os casos estiveram expostos?
+
+Percentual de casos confirmados que relataram cada situação de risco nos 30 dias antes dos sintomas (Brasil; mais de uma resposta é possível).
+
+```{ojs}
+leptTotalAno = d3.rollup(zPerfil.filter(d => d.agravo === "LEPT" && d.dimensao === "Sexo"), v => d3.sum(v, d => d.casos ?? 0), d => d.ano)
+viewof periodoExp = Inputs.radio(new Map([["Todos os anos", "todos"], ["Só 2024", "2024"]]), {value: "todos", label: "Período"})
+exposicoes = d3.rollups(zPerfil.filter(d => d.agravo === "LEPT" && d.dimensao === "Exposição de risco" && (periodoExp === "todos" || d.ano === 2024)),
+  v => 100 * d3.sum(v, d => d.casos ?? 0) / d3.sum(new Set(v.map(d => d.ano)), a => leptTotalAno.get(a)), d => d.categoria)
+  .map(([categoria, pct]) => ({categoria, pct}))
+Plot.plot({
+  width: L, height: 340, marginLeft: estreito ? 150 : 240,
+  x: {label: "% dos casos confirmados", grid: true},
+  y: {label: null, tickFormat: cortar(24)},
+  marks: [Plot.barX(exposicoes, {y: "categoria", x: "pct", sort: {y: "-x"}, fill: d => d.categoria === "Água ou lama de enchente" ? cor.acento : cor.primaria, tip: true}), Plot.ruleX([0])]
+})
+```
+
+Compare "todos os anos" com "só 2024". Quanto cresce a exposição à água ou lama de enchente?
+
+## Como trabalhar em aula
+
+Pergunta central: **quantas pessoas adoeceram de leptospirose depois da enchente, e quando a gente ficou sabendo?** O caso ensina a diferença entre o que se sabe *durante* uma emergência e o que o dado consolidado mostra *depois*.
+
+::: {.roteiro}
+::: {.etapa}
+[Aula 1 · 10 min]{.tempo}
+
+**Linha do tempo das notícias.** Projete as duas manchetes da Agência Brasil (maio e julho de 2024). Pergunte: "quantos casos o RS teve em 2024?". Cada grupo faz uma estimativa.
+:::
+
+::: {.etapa}
+[Aula 1 · 20 min]{.tempo}
+
+**Confronto com o dado.** Os grupos usam a série mensal e o mapa de calor do RS para encontrar o total consolidado de 2024 e o mês com mais casos. Por que o total é tão maior que o das notícias? Introduza notificado × confirmado, data de sintomas × data de notificação e atraso de investigação.
+:::
+
+::: {.etapa}
+[Aula 1 · 20 min]{.tempo}
+
+**Exposição.** Com o gráfico de exposições, os grupos comparam 2024 com os outros anos e identificam os municípios mais atingidos no mapa. Quem se expôs mais: quem morava na área alagada, quem trabalhou na limpeza, os voluntários?
+:::
+
+::: {.etapa}
+[Aula 2 · 35 min]{.tempo}
+
+**Sala de situação.** Simule a primeira semana depois de uma enchente na sua cidade. Grupos interprofissionais preparam um **plano de resposta de uma página**: orientação à população, critério de suspeita clínica para a rede, insumos (exames, antibióticos), controle de roedores e quem comunica o quê. Use a série histórica da sua UF para estimar quantos casos esperar.
+:::
+
+::: {.etapa}
+[Aula 2 · 15 min]{.tempo}
+
+**Fechamento.** Que dado, se existisse em tempo real, mudaria a resposta? Discuta a diferença entre vigilância (dado consolidado) e alerta (dado rápido e incompleto).
+:::
+:::
+
+**Avaliação sugerida** (plano de resposta): usa a data de início dos sintomas, e não a de notificação; justifica a estimativa de casos com a série histórica; inclui medidas para pessoas, ambiente e animais; atribui responsabilidades por profissão.
+
+**Para turmas de ciência de dados:** os dados mensais por UF permitem ajustar um modelo de série temporal com sazonalidade e verificar se ele "previa" 2024. A pergunta é boa justamente porque a resposta é não: eventos extremos fogem do padrão histórico.
+
+## Perguntas por profissão
+
+::: {.lente .med}
+#### []{.bi .bi-heart-pulse} Medicina
+1. Que sinais diferenciam a leptospirose de dengue, que circula na mesma época? Por que o atraso no antibiótico importa?
+2. Que critérios indicam a forma grave e a necessidade de internação?
+3. Por que a confirmação laboratorial demora, e como o médico deve agir enquanto isso?
+:::
+
+::: {.lente .enf}
+#### []{.bi .bi-bandaid} Enfermagem
+1. Que orientações a equipe deve dar à população que volta para casa depois da enchente? Use o gráfico de exposições.
+2. Como organizar o acolhimento de pacientes com febre num abrigo?
+3. Que dados da ficha de notificação a enfermagem pode garantir para que a investigação não atrase?
+:::
+
+::: {.lente .far}
+#### []{.bi .bi-capsule} Farmácia
+1. Quais antibióticos são usados nas formas leve e grave? Que cuidados de uso e de estoque são importantes numa emergência?
+2. Use a série histórica da sua UF para estimar a demanda de tratamento num ano com enchente.
+3. Que riscos traz a automedicação com antibiótico depois de uma enchente?
+:::
+
+::: {.lente .vet}
+#### []{.bi .bi-heart} Medicina Veterinária
+1. Que medidas de controle de roedores você proporia para o município com maior incidência no seu estado? Por que o controle químico sozinho não basta?
+2. Cães e animais de produção também se infectam. Que papel eles têm na transmissão para pessoas?
+3. Que vacina existe para cães e o que ela protege, e o que não protege?
+:::
+
+## Limites do dado
+
+::: {.limites}
+- **Confirmado não é todo caso.** Só entram casos confirmados; muitos casos leves nunca chegam a ser investigados.
+- **Data dos sintomas.** A série mensal usa a data dos primeiros sintomas, que é a mais correta para epidemiologia, mas diferente das datas que aparecem nas notícias.
+- **Exposição é declarada.** Os fatores de risco vêm de entrevista e podem estar incompletos.
+- **Não há dados ambientais nem animais.** Chuva, área alagada, coleta de lixo e infestação por roedores precisariam vir de outras fontes.
+- **Anos preliminares.** Os anos mais recentes ainda serão revisados e costumam crescer.
+:::
+
+## Baixar os dados
+
+| Arquivo | Conteúdo |
+|---|---|
+| [zoonoses_uf_mes.csv](../dados/zoonoses_uf_mes.csv) | Casos por UF e mês dos primeiros sintomas (use `agravo = LEPT`) |
+| [zoonoses_municipio_ano.csv](../dados/zoonoses_municipio_ano.csv) | Casos e óbitos por município de residência e ano |
+| [zoonoses_uf_ano.csv](../dados/zoonoses_uf_ano.csv) | Casos, óbitos, incidência e letalidade por UF e ano |
+| [zoonoses_perfil_brasil.csv](../dados/zoonoses_perfil_brasil.csv) | Perfil e exposições de risco (Brasil) |
+| [populacao_municipio.csv](../dados/populacao_municipio.csv) | População por município e ano |
+
+Fontes: Ministério da Saúde, SINAN/DATASUS; IBGE. Veja a [metodologia](../metodologia.qmd).

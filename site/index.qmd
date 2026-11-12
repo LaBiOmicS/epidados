@@ -53,8 +53,8 @@ finais = s => s.filter(d => d.situacao === "final")
 [Milhões de notificações do Sistema de Informação de Agravos de Notificação viram mapas, gráficos, desafios e datasets para aulas de veterinária, medicina, enfermagem, farmácia e ciência de dados.]{.op-lead}
 
 ::: {.op-acoes}
-[Explorar os dados ↓](#explore){.btn .btn-lg .op-btn-claro}
-[[]{.bi .bi-map} Estudo de caso](casos/zoonoses.qmd){.btn .btn-lg .op-btn-contorno}
+[Explorar os dados ↓](#explore){.btn .btn-lg .op-btn-claro .op-btn-principal}
+[[]{.bi .bi-map} Estudos de caso](casos/index.qmd){.btn .btn-lg .op-btn-contorno}
 [[]{.bi .bi-cpu} Dados para IA](dados-ia/index.qmd){.btn .btn-lg .op-btn-contorno}
 :::
 
@@ -312,7 +312,10 @@ md`**Para pensar:** ${agravoP === "LEIV" ? "compare o Maranhão e o Tocantins co
 ```
 :::
 
-[Ver o estudo de caso completo, com mapas por município →](casos/zoonoses.qmd){.op-link}
+```{ojs}
+paginaCaso = ({LEIV: ["casos/leishmaniose.html", "leishmaniose visceral"], LEPT: ["casos/leptospirose.html", "leptospirose"], ANTR: ["casos/raiva.html", "raiva e atendimento antirrábico"]})[agravoP]
+html`<a class="op-link" href="${paginaCaso[0]}">Ver o estudo de caso de ${paginaCaso[1]}, com notícias, mapas e roteiro de aula →</a>`
+```
 :::
 :::
 
@@ -326,11 +329,11 @@ md`**Para pensar:** ${agravoP === "LEIV" ? "compare o Maranhão e o Tocantins co
 ::: {.porta .revelar}
 []{.icone .bi .bi-people}
 
-### Estudo de caso
+### Estudos de caso
 
-*Zoonoses e Saúde Única*: leishmaniose visceral, leptospirose e agressões por animais, com mapas, séries históricas, perguntas por profissão e um quadro com os limites do dado.
+Leishmaniose visceral, leptospirose e raiva, cada um com contexto, notícias reais ligadas aos dados, mapas, roteiro de duas aulas e perguntas por profissão.
 
-[Abrir o caso →](casos/zoonoses.qmd)
+[Ver os três casos →](casos/index.qmd)
 :::
 
 ::: {.porta .acento .revelar}

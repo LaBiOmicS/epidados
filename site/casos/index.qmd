@@ -1,0 +1,75 @@
+---
+title: "Estudos de caso"
+subtitle: "Três zoonoses, três perguntas, os mesmos dados públicos do SUS"
+aliases:
+  - zoonoses.html
+toc: false
+---
+
+Cerca de 60% dos patógenos que causam doenças em humanos são compartilhados com animais. Os três casos abaixo olham para essa fronteira entre pessoas, animais e ambiente, a ideia de **Saúde Única**, com dados reais de notificação do SINAN.
+
+Cada caso traz contexto, notícias verdadeiras ligadas aos dados, gráficos e mapas interativos, um roteiro de duas aulas, perguntas por profissão e os limites do dado. Os casos são independentes: use um só ou combine os três.
+
+::: {.casos}
+::: {.caso-cartao .lv}
+[Leishmaniose visceral]{.caso-tag}
+
+### Matar cães reduz a doença em pessoas?
+
+Os casos caíram, mas a letalidade subiu. Belo Horizonte, Rio de Janeiro e Imperatriz mostram como o controle do reservatório canino divide gestores, veterinários e tutores.
+
+[Abrir o caso →](leishmaniose.qmd)
+:::
+
+::: {.caso-cartao .lept}
+[Leptospirose]{.caso-tag}
+
+### Quantos adoeceram depois da enchente?
+
+As enchentes de 2024 no Rio Grande do Sul pelas notícias e pelos dados consolidados: atraso de notificação, sazonalidade e resposta a emergências.
+
+[Abrir o caso →](leptospirose.qmd)
+:::
+
+::: {.caso-cartao .raiva}
+[Raiva e atendimento antirrábico]{.caso-tag}
+
+### Se a raiva quase acabou, por que tantos atendimentos?
+
+Dez anos sem raiva humana por cães, mas mortes por morcego e sagui. O caso separa doença, exposição e prevenção.
+
+[Abrir o caso →](raiva.qmd)
+:::
+:::
+
+## Qual caso para qual turma
+
+| | Leishmaniose visceral | Leptospirose | Raiva |
+|---|---|---|---|
+| **Medicina Veterinária** | Reservatório canino, eutanásia e coleiras | Controle de roedores | Observação do animal, ciclos silvestres |
+| **Medicina** | Letalidade, coinfecção com HIV | Diagnóstico diferencial, forma grave | Profilaxia pós-exposição |
+| **Enfermagem** | Suspeita clínica, notificação | Orientação após enchente | Cuidado com o ferimento, adesão à vacina |
+| **Farmácia** | Tratamento e eventos adversos | Antibióticos e estoque | Demanda de vacina e soro |
+| **Ciência de dados** | Classificação de óbito, confundimento | Série temporal e eventos extremos | Detecção de anomalias |
+| **Conceito central** | Incidência × casos, letalidade | Atraso de notificação, sazonalidade | Atendimento não é caso |
+
+## Para uma disciplina inteira
+
+Os três casos funcionam em sequência, em seis aulas:
+
+1. **Leishmaniose visceral**: apresenta incidência, letalidade e mapas, e o conflito entre saúde humana e animal;
+2. **Leptospirose**: acrescenta o tempo (sazonalidade, atraso) e o ambiente;
+3. **Raiva**: fecha com a prevenção e com a diferença entre exposição e doença.
+
+No fim, cada grupo escolhe um dos agravos e produz um boletim epidemiológico curto para o próprio município, usando os CSVs.
+
+## Limites comuns aos três casos
+
+::: {.limites}
+- **Não há dados animais.** Não existe base nacional aberta de leishmaniose canina, raiva animal ou infestação por roedores. Para uma análise de Saúde Única completa falta justamente a perna animal: um bom tema de discussão sobre a vigilância brasileira.
+- **Notificação depende do serviço.** Municípios que procuram mais encontram mais casos.
+- **Mudança de denominador.** A população de 2022 vem do Censo, que corrigiu para baixo as estimativas anteriores.
+- **Dados preliminares.** Os anos mais recentes ainda serão revisados.
+:::
+
+Os roteiros com respostas comentadas para professores estão no repositório do projeto. Fontes: Ministério da Saúde, SINAN/DATASUS; IBGE. Veja a [metodologia](../metodologia.qmd).

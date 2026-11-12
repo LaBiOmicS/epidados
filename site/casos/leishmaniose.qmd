@@ -1,0 +1,309 @@
+---
+title: "Leishmaniose visceral"
+subtitle: "Menos casos, mais mortes: o cão, o mosquito-palha e a cidade"
+execute:
+  echo: false
+---
+
+{{< include _comum.qmd >}}
+
+```{ojs}
+//| output: false
+agravoPagina = "LEIV"
+zUf = FileAttachment("../dados/zoonoses_uf_ano.csv").csv({typed: true})
+zMun = FileAttachment("../dados/zoonoses_municipio_ano.csv").csv({typed: true})
+zPerfil = FileAttachment("../dados/zoonoses_perfil_brasil.csv").csv({typed: true})
+serieMun = (nome, uf) => {
+  const c = +codigoMun(nome, uf);
+  const anos = d3.range(2007, d3.max(zMun.filter(d => d.agravo === "LEIV"), d => d.ano) + 1);
+  const por = new Map(zMun.filter(d => d.agravo === "LEIV" && d.codigo7 === c).map(d => [d.ano, d]));
+  return anos.map(ano => ({ano, casos: por.get(ano)?.casos ?? 0, obitos: por.get(ano)?.obitos ?? 0}));
+}
+lvBr = d3.rollups(zUf.filter(d => d.agravo === "LEIV"), v => ({
+  casos: d3.sum(v, d => d.casos), obitos: d3.sum(v, d => d.obitos), situacao: v[0].situacao
+}), d => d.ano).map(([ano, v]) => ({ano, ...v, letalidade: 100 * v.obitos / v.casos}))
+.sort((a, b) => a.ano - b.ano)
+lvPrimeiro = lvBr[0]
+lvUltimo = lvBr[lvBr.length - 1]
+```
+
+::: {.ficha}
+::: {}
+Cursos
+
+Medicina Veterinária · Medicina · Enfermagem · Farmácia
+:::
+
+::: {}
+Conceitos
+
+Incidência, letalidade, coinfecção, controle de reservatório, urbanização de zoonoses
+:::
+
+::: {}
+Tempo sugerido
+
+2 aulas de 50 minutos
+:::
+
+::: {}
+Dados
+
+SINAN, casos confirmados de 2007 a 2025, por município de residência
+:::
+:::
+
+## Contexto
+
+A leishmaniose visceral, ou **calazar**, é causada pelo protozoário *Leishmania infantum* e transmitida pela picada de fêmeas de flebotomíneos, os **mosquitos-palha** (*Lutzomyia longipalpis* é a principal espécie no Brasil). Nas cidades, o **cão** é o principal reservatório: o mosquito se infecta ao picar um cão doente e depois transmite o parasita a pessoas.
+
+No ser humano, a doença causa febre prolongada, emagrecimento, aumento do baço e do fígado e anemia. **Sem tratamento, é quase sempre fatal**. Crianças pequenas, idosos e pessoas com HIV têm maior risco de evoluir mal.
+
+O Brasil concentra cerca de **92% dos casos de leishmaniose visceral das Américas** ([OPAS, 2026](https://www.paho.org/pt/noticias/19-6-2026-opas-e-oms-realizam-missao-tecnica-no-brasil-para-fortalecer-acoes-enfrentamento)). O controle combina três frentes, e cada uma envolve uma profissão diferente:
+
+- **Pessoas**: diagnóstico e tratamento precoces na rede do SUS;
+- **Vetor**: borrifação de inseticida e manejo ambiental (matéria orgânica, quintais);
+- **Cão**: diagnóstico, **coleiras impregnadas com inseticida**, que o Ministério da Saúde passou a distribuir a municípios prioritários a partir de 2021, e **eutanásia** de cães positivos, a medida mais polêmica do programa. O tratamento de cães só é permitido com medicamento veterinário registrado; ele melhora o quadro clínico, mas não elimina o parasita.
+
+## Na imprensa
+
+Notícias reais para abrir a discussão. Cada uma vem acompanhada do que os dados do SINAN mostram sobre o mesmo lugar.
+
+::: {.noticias}
+::: {.noticia}
+[Câmara Municipal de Belo Horizonte · 15/09/2025]{.noticia-meta}
+
+**[Protetores querem que PBH revise política de eutanásia de cães infectados](https://www.cmbh.mg.gov.br/comunica%C3%A7%C3%A3o/not%C3%ADcias/2025/09/protetores-querem-que-pbh-revise-pol%C3%ADtica-de-eutan%C3%A1sia-de-c%C3%A3es)**
+
+Em audiência pública, protetores de animais citaram estudo segundo o qual, dos cerca de 15 mil cães eliminados em BH entre 1993 e 1997, quase 13 mil tiveram teste rápido falso-positivo. A prefeitura informou que menos de 40% dos tutores entregam os cães infectados e que mais de 36 mil cães são encoleirados por ano.
+
+::: {.noticia-dado}
+```{ojs}
+bh = serieMun("Belo Horizonte", "MG")
+html`<div class="noticia-dado-texto"><strong>No SINAN:</strong> Belo Horizonte passou de ${fmt(d3.max(bh, d => d.casos))} casos confirmados no pico (${d3.greatest(bh, d => d.casos).ano}) para ${fmt(bh.at(-1).casos)} em ${bh.at(-1).ano}. Pesquise em que ano cada medida de controle começou na cidade e marque na série: a queda veio antes ou depois?</div>`
+```
+```{ojs}
+miniSerie(bh)
+```
+:::
+:::
+
+::: {.noticia}
+[Agência Brasil · 20/08/2025]{.noticia-meta}
+
+**[Especialistas alertam para a falta de informação sobre a leishmaniose](https://agenciabrasil.ebc.com.br/saude/noticia/2025-08/especialistas-alertam-para-falta-de-informacao-sobre-leishmaniose)**
+
+No Rio de Janeiro, uma associação de proteção animal aponta subnotificação, em parte porque tutores temem que os cães sejam levados à eutanásia. A reportagem cita 52 casos humanos confirmados entre 2012 e 2025 e, segundo a Secretaria Municipal de Saúde, 386 casos em cães em 2024 na capital.
+
+::: {.noticia-dado}
+```{ojs}
+rio = serieMun("Rio de Janeiro", "RJ")
+rioPeriodo = d3.sum(rio.filter(d => d.ano >= 2012), d => d.casos)
+html`<div class="noticia-dado-texto"><strong>No SINAN:</strong> ${fmt(rioPeriodo)} casos confirmados em residentes da capital entre 2012 e ${rio.at(-1).ano}, número próximo ao citado. Repare que a maior parte é posterior a 2018: a doença chegou a uma metrópole onde antes era rara.</div>`
+```
+```{ojs}
+miniSerie(rio)
+```
+:::
+:::
+
+::: {.noticia}
+[Fiocruz Pernambuco · dissertação de mestrado · 2025]{.noticia-meta}
+
+**[O impacto parcial do projeto do encoleiramento canino no combate à leishmaniose visceral no município de Imperatriz-MA](https://arca.fiocruz.br/items/ac456473-fc3a-43b5-82ba-57e3b087c592)**
+
+Estudo descritivo dos quatro primeiros ciclos de coleiras com inseticida (junho de 2022 a julho de 2024), com cobertura de 30% a 48% dos cães em doze bairros. Os autores relatam queda da incidência humana de 16,3 para 7,2 casos por 100 mil habitantes e chamam os achados de evidências preliminares.
+
+::: {.noticia-dado}
+```{ojs}
+imp = serieMun("Imperatriz", "MA")
+html`<div class="noticia-dado-texto"><strong>No SINAN:</strong> Imperatriz teve ${fmt(imp.find(d => d.ano === 2021).casos)} casos em 2021, ${fmt(imp.find(d => d.ano === 2024).casos)} em 2024 e ${fmt(imp.find(d => d.ano === 2025).casos)} em 2025 (em vermelho, os anos das coleiras). Calcule a incidência com a população do município: você chega aos mesmos valores do estudo? O que pode explicar a diferença?</div>`
+```
+```{ojs}
+miniSerie(imp, {destaque: [2022, 2023, 2024]})
+```
+:::
+:::
+
+::: {.noticia}
+[OPAS/OMS · 19/06/2026]{.noticia-meta}
+
+**[OPAS e OMS realizam missão técnica no Brasil para fortalecer ações de enfrentamento às leishmanioses](https://www.paho.org/pt/noticias/19-6-2026-opas-e-oms-realizam-missao-tecnica-no-brasil-para-fortalecer-acoes-enfrentamento)**
+
+A missão passou por Brasília, Montes Claros e Rio de Janeiro. O texto lembra que o Brasil responde por cerca de 92% dos casos de leishmaniose visceral da região e cita como desafios a coinfecção com HIV e as elevadas taxas de letalidade.
+
+::: {.noticia-dado}
+```{ojs}
+html`<div class="noticia-dado-texto"><strong>No SINAN:</strong> a letalidade no Brasil passou de ${fmt(lvPrimeiro.letalidade, 1)}% em ${lvPrimeiro.ano} para ${fmt(lvUltimo.letalidade, 1)}% em ${lvUltimo.ano}, enquanto os casos caíram de ${fmt(lvPrimeiro.casos)} para ${fmt(lvUltimo.casos)}.</div>`
+```
+```{ojs}
+miniSerie(lvBr, {y: "letalidade", rotulo: "% de letalidade"})
+```
+:::
+:::
+:::
+
+## Explore os dados
+
+### Menos casos, mais mortes
+
+```{ojs}
+cartoes([
+  [`Casos confirmados em ${lvPrimeiro.ano}`, fmt(lvPrimeiro.casos)],
+  [`Casos confirmados em ${lvUltimo.ano}`, fmt(lvUltimo.casos)],
+  [`Letalidade ${lvPrimeiro.ano} → ${lvUltimo.ano}`, `${fmt(lvPrimeiro.letalidade, 1)}% → ${fmt(lvUltimo.letalidade, 1)}%`]
+])
+```
+
+```{ojs}
+Plot.plot({
+  width: L, height: 260, marginLeft: 50,
+  y: {label: "Casos confirmados", grid: true, tickFormat: eixo},
+  x: eixoAno,
+  marks: [
+    Plot.barY(lvBr, {x: "ano", y: "casos", fill: d => d.situacao === "final" ? cor.primaria : cor.clara, tip: true}),
+    Plot.ruleY([0])
+  ]
+})
+```
+
+```{ojs}
+Plot.plot({
+  width: L, height: 220, marginLeft: 50,
+  y: {label: "Letalidade (%)", grid: true, domain: [0, d3.max(lvBr, d => d.letalidade) * 1.15], tickFormat: eixo},
+  x: eixoAno,
+  marks: [
+    Plot.lineY(lvBr, {x: "ano", y: "letalidade", stroke: cor.acento, marker: "circle", tip: true}),
+    Plot.ruleY([0])
+  ]
+})
+```
+
+### Onde estão os casos?
+
+{{< include _mapa.qmd >}}
+
+### A doença mudou de região?
+
+Proporção dos casos confirmados de cada ano por região de residência.
+
+```{ojs}
+ordemRegioes = ["Nordeste", "Norte", "Sudeste", "Centro-Oeste", "Sul"]
+lvRegiao = d3.rollups(zUf.filter(d => d.agravo === "LEIV"), v => d3.sum(v, d => d.casos), d => d.ano, d => regiaoDaUf.get(d.uf))
+  .flatMap(([ano, rs]) => rs.map(([regiao, casos]) => ({ano, regiao, casos})))
+Plot.plot({
+  width: L, height: 280, marginLeft: 50,
+  y: {label: "Proporção dos casos (%)", percent: true},
+  x: eixoAno,
+  color: {legend: true, scheme: "Tableau10", domain: ordemRegioes},
+  marks: [Plot.barY(lvRegiao, Plot.stackY({offset: "normalize", order: ordemRegioes, x: "ano", y: "casos", fill: "regiao", tip: true}))]
+})
+```
+
+### Quem adoece?
+
+Troque o perfil e compare o início e o fim da série. Que mudança ajuda a explicar a letalidade crescente?
+
+```{ojs}
+viewof dimLv = Inputs.select(["Faixa etária", "Coinfecção HIV", "Sexo", "Raça/cor", "Entrada", "Evolução"], {label: "Perfil", value: "Faixa etária"})
+Plot.plot({
+  width: L, height: 300, marginLeft: 50,
+  y: {label: "Proporção dos casos (%)", percent: true},
+  x: eixoAno,
+  color: {legend: true, scheme: "Tableau10"},
+  marks: [Plot.barY(zPerfil.filter(d => d.agravo === "LEIV" && d.dimensao === dimLv && d.casos != null),
+    Plot.stackY({offset: "normalize", x: "ano", y: "casos", fill: "categoria", tip: true}))]
+})
+```
+
+Para ir além do gráfico, a [análise comentada do óbito por leishmaniose](../dados-ia/leishmaniose-analise.qmd) mostra que o efeito do HIV **se inverte** quando se compara dentro da mesma faixa etária.
+
+## Como trabalhar em aula
+
+Pergunta central: **matar cães reduz a leishmaniose em pessoas?** Os dados de casos humanos ajudam a responder, mas não bastam, e descobrir o que falta é parte do aprendizado.
+
+::: {.roteiro}
+::: {.etapa}
+[Aula 1 · 10 min]{.tempo}
+
+**Abertura com a notícia de Belo Horizonte.** Leia em voz alta o trecho sobre os testes falso-positivos e pergunte: "a eutanásia funciona?". Cada aluno escreve sua resposta e um argumento. Guarde as respostas para o fim.
+:::
+
+::: {.etapa}
+[Aula 1 · 25 min]{.tempo}
+
+**Exploração em grupos.** Cada grupo recebe uma cidade das notícias (Belo Horizonte, Rio de Janeiro, Imperatriz) e a cidade da própria universidade. Usando o mapa e a tabela desta página e o [CSV municipal](../dados/zoonoses_municipio_ano.csv), o grupo descreve casos, incidência e óbitos ao longo do tempo e marca na série quando cada medida de controle começou.
+:::
+
+::: {.etapa}
+[Aula 1 · 15 min]{.tempo}
+
+**O que o dado não diz.** Os grupos listam o que precisariam para avaliar o controle canino: número de cães testados e eliminados, cobertura de coleiras, densidade do vetor. Nenhum desses dados é aberto em nível nacional. Discuta por quê.
+:::
+
+::: {.etapa}
+[Aula 2 · 30 min]{.tempo}
+
+**Grupos interprofissionais.** Misture cursos. Cada grupo responde às perguntas da sua lente (abaixo) e prepara uma **nota técnica de uma página** para a secretaria de saúde de um município das notícias, com três recomendações justificadas por dados.
+:::
+
+::: {.etapa}
+[Aula 2 · 20 min]{.tempo}
+
+**Apresentação e fechamento.** Dois grupos apresentam. Volte às respostas da abertura: alguém mudou de opinião? Que tipo de evidência faria a turma mudar de ideia?
+:::
+:::
+
+**Avaliação sugerida** (nota técnica): diferencia casos de incidência; usa a série temporal, e não um ano isolado; reconhece pelo menos um limite do dado; propõe medidas coerentes com a profissão; cita a fonte.
+
+**Para turmas de ciência de dados:** substitua a nota técnica pelo [dataset de óbito por leishmaniose](../dados-ia/leishmaniose-obito.qmd). A pergunta passa a ser "quem tem maior risco de morrer?", com o cuidado de não tratar importância de variável como causa.
+
+## Perguntas por profissão
+
+::: {.lente .vet}
+#### []{.bi .bi-heart} Medicina Veterinária
+1. Por que o cão é o principal reservatório urbano? Que dado **animal** você precisaria para explicar o mapa desta página, e por que ele não está disponível?
+2. A notícia de BH cita testes falso-positivos. Calcule quantos cães sadios seriam eliminados com um teste de especificidade de 95% numa população de 10 mil cães com prevalência de 3%.
+3. Compare coleiras, tratamento e eutanásia: qual é o efeito esperado de cada uma sobre a **transmissão**, e não só sobre o cão?
+:::
+
+::: {.lente .med}
+#### []{.bi .bi-heart-pulse} Medicina
+1. A letalidade aumentou enquanto os casos caíram. Formule três hipóteses (biológica, assistencial e de vigilância) e diga que dado testaria cada uma.
+2. Use o perfil por faixa etária: que grupos concentram os casos e como isso mudou?
+3. Por que a coinfecção com HIV piora o prognóstico? Por que todo paciente com leishmaniose visceral deve ser testado para HIV?
+:::
+
+::: {.lente .enf}
+#### []{.bi .bi-bandaid} Enfermagem
+1. Que sinais na consulta de enfermagem devem levantar a suspeita de calazar numa criança de área endêmica?
+2. Que campos da ficha de notificação têm muito "Ignorado"? Qual é o impacto disso para a vigilância?
+3. Como orientar uma família que mora em área de transmissão e tem um cão positivo?
+:::
+
+::: {.lente .far}
+#### []{.bi .bi-capsule} Farmácia
+1. Quais são os medicamentos usados no tratamento da leishmaniose visceral humana no SUS? Que eventos adversos exigem monitoramento?
+2. Por que o tratamento canino só pode usar produto veterinário registrado, e não o medicamento humano?
+3. Que informações sobre adesão e efeitos adversos a farmácia pode devolver à equipe de vigilância?
+:::
+
+## Limites do dado
+
+::: {.limites}
+- **Não há dados animais.** Não existe base nacional aberta de leishmaniose canina, eutanásias ou coleiras. Avaliar o controle do reservatório exige dados que os municípios guardam, mas não publicam.
+- **Notificação depende do serviço.** Um município que procura mais encontra mais casos. Mapas de notificação misturam ocorrência da doença com capacidade de detecção.
+- **Município de residência.** O caso aparece onde a pessoa mora, não necessariamente onde foi infectada.
+- **Números diferentes da imprensa.** Notícias usam dados parciais, de outra fonte (secretaria, associação) ou de outro recorte. Comparar e explicar a diferença é um ótimo exercício.
+:::
+
+## Baixar os dados
+
+| Arquivo | Conteúdo |
+|---|---|
+| [zoonoses_municipio_ano.csv](../dados/zoonoses_municipio_ano.csv) | Casos e óbitos por município de residência e ano (use `agravo = LEIV`) |
+| [zoonoses_uf_ano.csv](../dados/zoonoses_uf_ano.csv) | Casos, óbitos, incidência e letalidade por UF e ano |
+| [zoonoses_perfil_brasil.csv](../dados/zoonoses_perfil_brasil.csv) | Perfil dos casos no Brasil (faixa etária, HIV, sexo, raça/cor) |
+| [populacao_municipio.csv](../dados/populacao_municipio.csv) | População por município e ano |
+
+Fontes: Ministério da Saúde, SINAN/DATASUS; IBGE. Veja a [metodologia](../metodologia.qmd).
